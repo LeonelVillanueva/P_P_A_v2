@@ -35,9 +35,6 @@ docs/
 # Scripts (pueden contener información sensible)
 scripts/
 
-# Database scripts (pueden contener información sensible)
-database/
-
 # Build outputs
 build/
 *.tsbuildinfo
