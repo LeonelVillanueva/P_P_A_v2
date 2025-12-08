@@ -7,7 +7,6 @@ import { useErrorHandler } from '../composables/useErrorHandler'
 export const useErrorStore = defineStore('error', () => {
   const {
     errors,
-    showErrorModal,
     addError,
     removeError,
     clearAllErrors,
@@ -16,7 +15,6 @@ export const useErrorStore = defineStore('error', () => {
 
   return {
     errors,
-    showErrorModal,
     addError,
     removeError,
     clearAllErrors,

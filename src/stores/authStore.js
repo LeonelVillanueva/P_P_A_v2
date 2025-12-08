@@ -1,60 +1,80 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { hashPassword, secureCompare, checkRateLimit, recordFailedAttempt, resetAttempts } from '../utils/authSecurity'
+import { login as apiLogin, verifyToken, getStoredToken, removeToken } from '../services/authService'
+import { checkRateLimit, recordFailedAttempt, resetAttempts } from '../utils/authSecurity'
 
 /**
- * Store de autenticación para protección privada con seguridad mejorada
+ * Store de autenticación con validación en servidor
  * 
- * IMPORTANTE: Configura la contraseña en la variable de entorno VITE_SITE_PASSWORD
+ * IMPORTANTE: 
+ * - Configura JWT_SECRET en Vercel (Environment Variables)
+ * - Configura VITE_SITE_PASSWORD o VITE_SITE_PASSWORD_HASH en Vercel
  */
 export const useAuthStore = defineStore('auth', () => {
   const isAuthenticated = ref(false)
-  const sessionKey = 'anime_saver_auth'
   const rateLimitKey = 'anime_saver_ip' // Identificador para rate limiting
+  const checkingAuth = ref(false)
 
-  // Obtener hash de contraseña de variable de entorno
-  // La contraseña se hashea al configurarse
-  const correctPasswordHash = import.meta.env.VITE_SITE_PASSWORD_HASH
-  
-  // Si no hay hash, usar la contraseña directa (modo legacy - menos seguro)
-  const correctPassword = import.meta.env.VITE_SITE_PASSWORD
-  
-  // Verificar que la contraseña esté configurada
-  if (!correctPassword && !correctPasswordHash && import.meta.env.DEV) {
-    console.warn('⚠️ VITE_SITE_PASSWORD o VITE_SITE_PASSWORD_HASH no está configurada en .env')
-    console.warn('📝 Agrega VITE_SITE_PASSWORD=tu-contraseña en tu archivo .env')
+  /**
+   * Obtener identificador único para rate limiting
+   */
+  const getIdentifier = () => {
+    if (typeof window !== 'undefined') {
+      const ua = navigator.userAgent || ''
+      const lang = navigator.language || ''
+      return `${ua.substring(0, 20)}_${lang}_${rateLimitKey}`
+    }
+    return rateLimitKey
   }
 
-  // Verificar si ya hay una sesión guardada
-  const checkStoredSession = () => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem(sessionKey)
-      if (stored) {
-        // Verificar que la sesión no haya expirado (24 horas)
-        const sessionData = JSON.parse(stored)
-        const now = Date.now()
-        if (now - sessionData.timestamp < 24 * 60 * 60 * 1000) {
-          isAuthenticated.value = true
-          return true
-        } else {
-          localStorage.removeItem(sessionKey)
-        }
+  /**
+   * Verificar si hay un token válido guardado
+   */
+  const checkStoredSession = async () => {
+    checkingAuth.value = true
+    
+    try {
+      const token = getStoredToken()
+      
+      if (!token) {
+        isAuthenticated.value = false
+        checkingAuth.value = false
+        return false
       }
+      
+      // Verificar token con el servidor
+      const result = await verifyToken(token)
+      
+      if (result.authenticated) {
+        isAuthenticated.value = true
+        checkingAuth.value = false
+        return true
+      } else {
+        // Token inválido, limpiar
+        removeToken()
+        isAuthenticated.value = false
+        checkingAuth.value = false
+        return false
+      }
+    } catch (error) {
+      console.error('Error checking session:', error)
+      isAuthenticated.value = false
+      checkingAuth.value = false
+      return false
     }
-    return false
   }
 
   // Inicializar: verificar sesión guardada
   checkStoredSession()
 
   /**
-   * Intentar login con contraseña (con seguridad mejorada)
+   * Intentar login con contraseña (validación en servidor)
    */
   const login = async (password) => {
     // Obtener identificador único para rate limiting
     const identifier = getIdentifier()
     
-    // Verificar rate limiting
+    // Verificar rate limiting (cliente)
     const rateLimit = checkRateLimit(identifier)
     if (!rateLimit.allowed) {
       return {
@@ -65,45 +85,15 @@ export const useAuthStore = defineStore('auth', () => {
       }
     }
     
-    // Verificar contraseña
-    let isValid = false
+    // Llamar a la API del servidor para validar contraseña
+    const result = await apiLogin(password)
     
-    if (correctPasswordHash) {
-      // Modo seguro: comparar hash
-      try {
-        const inputHash = await hashPassword(password)
-        isValid = secureCompare(inputHash, correctPasswordHash)
-      } catch (error) {
-        console.error('Error hashing password:', error)
-        return {
-          success: false,
-          error: 'Error de autenticación'
-        }
-      }
-    } else if (correctPassword) {
-      // Modo legacy: comparación directa (menos seguro pero compatible)
-      // Usar comparación segura para evitar timing attacks
-      isValid = secureCompare(password, correctPassword)
-    } else {
-      return {
-        success: false,
-        error: 'Sistema de autenticación no configurado'
-      }
-    }
-    
-    if (isValid) {
+    if (result.success) {
       // Login exitoso
       isAuthenticated.value = true
       
       // Resetear intentos fallidos
       resetAttempts(identifier)
-      
-      // Guardar sesión en localStorage (24 horas)
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(sessionKey, JSON.stringify({
-          timestamp: Date.now()
-        }))
-      }
       
       return {
         success: true,
@@ -124,24 +114,10 @@ export const useAuthStore = defineStore('auth', () => {
       
       return {
         success: false,
-        error: 'Contraseña incorrecta',
+        error: result.error || 'Contraseña incorrecta',
         remainingAttempts: newRateLimit.remainingAttempts
       }
     }
-  }
-  
-  /**
-   * Obtener identificador único para rate limiting
-   */
-  const getIdentifier = () => {
-    // Usar una combinación de user agent y otras características
-    // No es perfecto pero ayuda a prevenir ataques básicos
-    if (typeof window !== 'undefined') {
-      const ua = navigator.userAgent || ''
-      const lang = navigator.language || ''
-      return `${ua.substring(0, 20)}_${lang}_${rateLimitKey}`
-    }
-    return rateLimitKey
   }
 
   /**
@@ -149,13 +125,12 @@ export const useAuthStore = defineStore('auth', () => {
    */
   const logout = () => {
     isAuthenticated.value = false
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem(sessionKey)
-    }
+    removeToken()
   }
 
   return {
     isAuthenticated: computed(() => isAuthenticated.value),
+    checkingAuth: computed(() => checkingAuth.value),
     login,
     logout,
     checkStoredSession

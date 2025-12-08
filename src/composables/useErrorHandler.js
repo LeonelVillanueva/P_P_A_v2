@@ -5,7 +5,6 @@ import { ref } from 'vue'
  */
 export function useErrorHandler() {
   const errors = ref([])
-  const showErrorModal = ref(false)
 
   /**
    * Agregar un error al sistema
@@ -24,9 +23,6 @@ export function useErrorHandler() {
     }
 
     errors.value.unshift(errorObj)
-    
-    // No abrir modal automáticamente, solo mostrar notificación
-    // showErrorModal.value = true
 
     // Log en consola para debugging (solo en desarrollo)
     if (import.meta.env.DEV) {
@@ -44,11 +40,6 @@ export function useErrorHandler() {
     if (index !== -1) {
       errors.value.splice(index, 1)
     }
-    
-    // Cerrar modal si no hay más errores
-    if (errors.value.length === 0) {
-      showErrorModal.value = false
-    }
   }
 
   /**
@@ -56,7 +47,6 @@ export function useErrorHandler() {
    */
   const clearAllErrors = () => {
     errors.value = []
-    showErrorModal.value = false
   }
 
   /**
@@ -77,7 +67,6 @@ export function useErrorHandler() {
 
   return {
     errors,
-    showErrorModal,
     addError,
     removeError,
     clearAllErrors,
