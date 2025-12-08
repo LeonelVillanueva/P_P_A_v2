@@ -1,6 +1,19 @@
 <template>
   <div>
-    <div class="mb-6 flex items-center justify-between">
+    <!-- Header móvil (oculto) -->
+    <div class="sm:hidden mb-3 px-1">
+      <div class="flex items-center justify-between">
+        <h2 class="text-lg font-bold text-gray-800">
+          {{ sectionName }}
+        </h2>
+        <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+          {{ count }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Header web (visible) -->
+    <div class="hidden sm:block mb-6 flex items-center justify-between">
       <h2 class="text-2xl font-bold text-gray-800">
         {{ sectionName }}
       </h2>
@@ -8,7 +21,21 @@
         {{ count }} {{ formatAnimeCount(count) }}
       </span>
     </div>
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
+
+    <!-- Lista móvil (diseño diferente) -->
+    <div class="sm:hidden space-y-0">
+      <AnimeCard 
+        v-for="anime in animes" 
+        :key="anime.id"
+        :anime="anime"
+        @open="$emit('open-anime', anime)"
+        @edit="$emit('edit', anime)"
+        @delete="$emit('delete', anime)"
+      />
+    </div>
+
+    <!-- Grid web (diseño original) -->
+    <div class="hidden sm:grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
       <AnimeCard 
         v-for="anime in animes" 
         :key="anime.id"
