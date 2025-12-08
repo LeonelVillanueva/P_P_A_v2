@@ -11,9 +11,15 @@ export const useAuthStore = defineStore('auth', () => {
   const isAuthenticated = ref(false)
   const sessionKey = 'anime_saver_auth'
 
-  // Obtener contraseña de variable de entorno o usar una por defecto
-  // ⚠️ CAMBIA ESTA CONTRASEÑA en producción
-  const correctPassword = import.meta.env.VITE_SITE_PASSWORD || 'cambiar-contraseña-aqui'
+  // Obtener contraseña de variable de entorno
+  // Configura VITE_SITE_PASSWORD en tu archivo .env
+  const correctPassword = import.meta.env.VITE_SITE_PASSWORD
+  
+  // Verificar que la contraseña esté configurada
+  if (!correctPassword && import.meta.env.DEV) {
+    console.warn('⚠️ VITE_SITE_PASSWORD no está configurada en .env')
+    console.warn('📝 Agrega VITE_SITE_PASSWORD=tu-contraseña en tu archivo .env')
+  }
 
   // Verificar si ya hay una sesión guardada
   const checkStoredSession = () => {
