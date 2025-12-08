@@ -7,34 +7,57 @@
     />
 
     <div class="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
+      <!-- Estadísticas -->
+      <StatsDashboard 
+        v-if="showStats && !animeStore.loading"
+        :stats="animeStore.stats"
+      />
+
       <!-- Sistema de Pestañas -->
       <AnimeTabs
         :active-tab="activeTab"
         :sections="sections"
         :get-count="getSectionCount"
+        :view-mode="viewMode"
         @change-tab="activeTab = $event"
+        @change-view="setViewMode"
+        @drop-anime="handleDropAnime"
       >
         <template #default="{ activeTab: currentTab }">
           <Transition name="fade" mode="out-in">
             <div :key="currentTab">
+              <!-- Barra de búsqueda y filtros -->
+              <SearchBar
+                v-if="!animeStore.loading"
+                :estados="animeStore.estados"
+                :temporadas="animeStore.temporadas"
+                :total-count="animeStore.animes.length"
+                :filtered-count="filteredAnimes.length"
+                @update:search="searchQuery = $event"
+                @update:filters="filters = $event"
+              />
+
               <!-- Loading State -->
               <AnimeLoadingState v-if="animeStore.loading" />
 
               <!-- Empty State -->
               <AnimeEmptyState 
-                v-else-if="getAnimesPorSeccion(currentTab).length === 0"
+                v-else-if="filteredAnimes.length === 0"
                 @add-anime="animeModal.open()"
               />
 
               <!-- Animes Grid -->
               <AnimeGrid
                 v-else
-                :animes="getAnimesPorSeccion(currentTab)"
+                :animes="filteredAnimes"
                 :section-name="getSectionName(currentTab)"
-                :count="getAnimesPorSeccion(currentTab).length"
+                :count="filteredAnimes.length"
+                :view-mode="viewMode"
+                :section-id="currentTab"
                 @open-anime="animeModal.open"
                 @edit="animeModal.open"
                 @delete="handleDeleteAnime"
+                @change-view="setViewMode"
               />
             </div>
           </Transition>
@@ -71,15 +94,41 @@
       @save-estados="handleSaveEstados"
       @save-temporadas="handleSaveTemporadas"
     />
+
+    <!-- Confirm Dialog -->
+    <ConfirmDialog
+      :show="confirmDialog.show.value"
+      :title="confirmDialog.title.value"
+      :message="confirmDialog.message.value"
+      :type="confirmDialog.type.value"
+      :confirm-text="confirmDialog.confirmText.value"
+      :cancel-text="confirmDialog.cancelText.value"
+      @confirm="confirmDialog.onConfirm"
+      @cancel="confirmDialog.onCancel"
+    />
+
+    <!-- Success Popup -->
+    <SuccessPopup
+      :show="successPopup.show.value"
+      :title="successPopup.title.value"
+      :message="successPopup.message.value"
+      :duration="successPopup.duration.value"
+      @close="successPopup.close"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useAnimeStore } from '../stores/animeStore'
 import { useErrorStore } from '../stores/errorStore'
 import { useModal } from '../composables/useModal'
 import { useAnimeSections } from '../composables/useAnimeSections'
+import { useViewMode } from '../composables/useViewMode'
+import { useConfirmDialog } from '../composables/useConfirmDialog'
+import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts'
+import { useSuccessPopup } from '../composables/useSuccessPopup'
+import { getStateBySection } from '../constants/sections'
 import AppHeader from '../components/layout/AppHeader.vue'
 import AnimeTabs from '../components/anime/AnimeTabs.vue'
 import AnimeGrid from '../components/anime/AnimeGrid.vue'
@@ -88,16 +137,28 @@ import AnimeEmptyState from '../components/anime/AnimeEmptyState.vue'
 import AnimeModal from '../components/anime/AnimeModal.vue'
 import AnimeSearchModal from '../components/anime/AnimeSearchModal.vue'
 import ConfigSection from '../components/config/ConfigSection.vue'
+import StatsDashboard from '../components/anime/StatsDashboard.vue'
+import SearchBar from '../components/anime/SearchBar.vue'
+import ConfirmDialog from '../components/common/ConfirmDialog.vue'
+import SuccessPopup from '../components/common/SuccessPopup.vue'
 
 const animeStore = useAnimeStore()
 const errorStore = useErrorStore()
 const animeModal = useModal()
 const configModal = useModal()
 const searchModal = useModal()
+const confirmDialog = useConfirmDialog()
+const successPopup = useSuccessPopup()
 
 const savingAnime = ref(false)
 const savingConfig = ref(false)
 const activeTab = ref('vistos')
+const searchQuery = ref('')
+const filters = ref({})
+const showStats = ref(false)
+
+// Modo de vista
+const { viewMode, setViewMode } = useViewMode()
 
 const {
   SECTIONS: sections,
@@ -105,6 +166,22 @@ const {
   getSectionName,
   getSectionCount
 } = useAnimeSections(animeStore)
+
+// Animes filtrados
+const filteredAnimes = computed(() => {
+  const seccionAnimes = getAnimesPorSeccion(activeTab.value)
+  
+  const filterOptions = {
+    search: searchQuery.value,
+    estado: filters.value.estado || getStateBySection(activeTab.value),
+    temporadas: filters.value.temporada ? [filters.value.temporada] : undefined,
+    sortBy: filters.value.sortBy
+  }
+  
+  return animeStore.filteredAnimes(filterOptions).filter(anime => 
+    seccionAnimes.some(a => a.id === anime.id)
+  )
+})
 
 const handleSubmitAnime = async (formData) => {
   savingAnime.value = true
@@ -158,8 +235,8 @@ const handleSaveEstados = async (estados) => {
       () => animeStore.updateConfiguracion('estados', estados),
       'Guardar Estados'
     )
-    // Mostrar éxito (podrías crear un sistema de notificaciones de éxito también)
-    errorStore.addError('Estados guardados correctamente', 'Éxito', { type: 'success' })
+    // Mostrar popup de éxito
+    successPopup.showSuccess('Estados guardados correctamente', 'Éxito')
   } catch (error) {
     // Error ya manejado
   } finally {
@@ -174,7 +251,7 @@ const handleSaveTemporadas = async (temporadas) => {
       () => animeStore.updateConfiguracion('temporadas', temporadas),
       'Guardar Temporadas'
     )
-    errorStore.addError('Temporadas guardadas correctamente', 'Éxito', { type: 'success' })
+    successPopup.showSuccess('Temporadas guardadas correctamente', 'Éxito')
   } catch (error) {
     // Error ya manejado
   } finally {
@@ -198,11 +275,66 @@ const handleAnimeSelected = (animeData) => {
   animeModal.open(animeToOpen)
 }
 
-const handleDeleteAnime = async (anime) => {
-  // Confirmar eliminación
-  if (!confirm(`¿Estás seguro de que quieres eliminar "${anime.nombre}"?\n\nEsta acción no se puede deshacer.`)) {
+const handleDropAnime = async (anime, targetSectionId) => {
+  const targetEstado = getStateBySection(targetSectionId)
+  
+  if (!targetEstado) {
+    console.error('Estado no encontrado para sección:', targetSectionId)
+    errorStore.addError('Sección no válida', 'Error', { type: 'error' })
     return
   }
+  
+  // Comparar estados normalizados (sin espacios extra, mismo case)
+  const currentEstado = anime.estado?.trim()
+  const normalizedTargetEstado = targetEstado.trim()
+  
+  if (currentEstado === normalizedTargetEstado) {
+    // Ya está en ese estado, no hacer nada
+    return
+  }
+
+  try {
+    if (import.meta.env.DEV) {
+      console.log('Moviendo anime:', {
+        id: anime.id,
+        nombre: anime.nombre,
+        estadoActual: currentEstado,
+        estadoNuevo: normalizedTargetEstado,
+        estadosValidos: animeStore.estados
+      })
+    }
+    
+    // Actualizar el anime con el nuevo estado
+    await errorStore.handleError(
+      () => animeStore.updateAnime(anime.id, { estado: normalizedTargetEstado }),
+      'Mover Anime',
+      { anime: anime.nombre, estado: normalizedTargetEstado }
+    )
+    
+    // Recargar los animes para reflejar el cambio
+    await animeStore.fetchAnimes()
+    
+    // Mostrar popup de éxito
+    successPopup.showSuccess(`"${anime.nombre}" movido a ${normalizedTargetEstado}`, 'Éxito')
+  } catch (error) {
+    // El error ya fue manejado por handleError, pero agregamos más contexto
+    if (import.meta.env.DEV) {
+      console.error('Error completo moviendo anime:', error)
+    }
+  }
+}
+
+const handleDeleteAnime = async (anime) => {
+  // Confirmar eliminación con modal personalizado
+  const confirmed = await confirmDialog.confirm({
+    title: 'Eliminar Anime',
+    message: `¿Estás seguro de que quieres eliminar "${anime.nombre}"?\n\nEsta acción no se puede deshacer.`,
+    type: 'danger',
+    confirmText: 'Eliminar',
+    cancelText: 'Cancelar'
+  })
+
+  if (!confirmed) return
 
   try {
     await errorStore.handleError(
@@ -214,12 +346,39 @@ const handleDeleteAnime = async (anime) => {
     // Recargar animes después de eliminar
     await animeStore.fetchAnimes()
     
-    // Mostrar mensaje de éxito
-    errorStore.addError(`"${anime.nombre}" eliminado correctamente`, 'Éxito', { type: 'success' })
+    // Mostrar popup de éxito
+    successPopup.showSuccess(`"${anime.nombre}" eliminado correctamente`, 'Éxito')
   } catch (error) {
     // El error ya fue manejado por handleError
   }
 }
+
+// Atajos de teclado
+useKeyboardShortcuts({
+  'ctrl+k': () => {
+    // Abrir búsqueda rápida (por ahora solo enfocar el input de búsqueda)
+    const searchInput = document.querySelector('input[placeholder*="Buscar anime"]')
+    if (searchInput) {
+      searchInput.focus()
+      searchInput.select()
+    }
+  },
+  'ctrl+n': () => {
+    animeModal.open()
+  },
+  'ctrl+,': () => {
+    configModal.open()
+  },
+  'ctrl+/': () => {
+    showStats.value = !showStats.value
+  }
+})
+
+// Limpiar búsqueda cuando cambia de tab
+watch(activeTab, () => {
+  searchQuery.value = ''
+  filters.value = {}
+})
 
 onMounted(async () => {
   try {
@@ -238,6 +397,14 @@ onMounted(async () => {
   } catch (error) {
     // Errores ya manejados
   }
+  
+  // Enfocar el tablist después de cargar los datos (para que las flechas funcionen inmediatamente)
+  setTimeout(() => {
+    const tablist = document.querySelector('[role="tablist"]')
+    if (tablist && window.innerWidth >= 640) { // Solo en web
+      tablist.focus()
+    }
+  }, 200)
 })
 </script>
 

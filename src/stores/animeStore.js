@@ -17,6 +17,86 @@ export const useAnimeStore = defineStore('anime', {
       return (seccion) => {
         return state.animes.filter(anime => anime.estado === seccion)
       }
+    },
+    
+    // Búsqueda y filtrado avanzado
+    filteredAnimes: (state) => (filters = {}) => {
+      let filtered = [...state.animes]
+      
+      // Filtro por búsqueda (nombre)
+      if (filters.search && filters.search.trim()) {
+        const searchLower = filters.search.toLowerCase().trim()
+        filtered = filtered.filter(anime => 
+          anime.nombre.toLowerCase().includes(searchLower)
+        )
+      }
+      
+      // Filtro por estado
+      if (filters.estado) {
+        filtered = filtered.filter(anime => anime.estado === filters.estado)
+      }
+      
+      // Filtro por temporadas
+      if (filters.temporadas && filters.temporadas.length > 0) {
+        filtered = filtered.filter(anime => 
+          filters.temporadas.some(temp => anime.temporadas?.includes(temp))
+        )
+      }
+      
+      // Ordenamiento
+      if (filters.sortBy) {
+        switch (filters.sortBy) {
+          case 'nombre-asc':
+            filtered.sort((a, b) => a.nombre.localeCompare(b.nombre))
+            break
+          case 'nombre-desc':
+            filtered.sort((a, b) => b.nombre.localeCompare(a.nombre))
+            break
+          case 'fecha-asc':
+            filtered.sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+            break
+          case 'fecha-desc':
+            filtered.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+            break
+          case 'actualizado-asc':
+            filtered.sort((a, b) => new Date(a.updated_at) - new Date(b.updated_at))
+            break
+          case 'actualizado-desc':
+            filtered.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))
+            break
+        }
+      }
+      
+      return filtered
+    },
+    
+    // Estadísticas
+    stats: (state) => {
+      const total = state.animes.length
+      const porEstado = {}
+      const porTemporada = {}
+      let totalTemporadas = 0
+      
+      state.animes.forEach(anime => {
+        // Contar por estado
+        porEstado[anime.estado] = (porEstado[anime.estado] || 0) + 1
+        
+        // Contar por temporada
+        if (anime.temporadas && anime.temporadas.length > 0) {
+          anime.temporadas.forEach(temp => {
+            porTemporada[temp] = (porTemporada[temp] || 0) + 1
+          })
+          totalTemporadas += anime.temporadas.length
+        }
+      })
+      
+      return {
+        total,
+        porEstado,
+        porTemporada,
+        totalTemporadas,
+        promedioTemporadas: total > 0 ? (totalTemporadas / total).toFixed(1) : 0
+      }
     }
   },
 

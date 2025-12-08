@@ -51,16 +51,16 @@
 
         <!-- Results -->
         <div class="flex-1 overflow-y-auto p-4 sm:p-6">
-          <div v-if="loading" class="text-center py-12">
-            <div class="inline-block animate-spin rounded-full h-10 w-10 border-4 border-purple-200 border-t-purple-600"></div>
+          <div v-if="loading" class="text-center py-12" role="status" aria-live="polite" aria-label="Buscando animes">
+            <div class="inline-block animate-spin rounded-full h-10 w-10 border-4 border-purple-200 border-t-purple-600" aria-hidden="true"></div>
             <p class="mt-4 text-gray-500">Buscando animes...</p>
           </div>
 
-          <div v-else-if="error" class="text-center py-12">
+          <div v-else-if="error" class="text-center py-12" role="alert" aria-live="polite">
             <p class="text-red-500">{{ error }}</p>
           </div>
 
-          <div v-else-if="results.length === 0 && searchQuery" class="text-center py-12">
+          <div v-else-if="results.length === 0 && searchQuery" class="text-center py-12" role="status" aria-live="polite">
             <p class="text-gray-500">No se encontraron animes</p>
           </div>
 
@@ -76,6 +76,7 @@
                   :src="anime.images?.jpg?.large_image_url || anime.images?.jpg?.image_url || anime.coverImage?.large"
                   :alt="anime.title"
                   class="w-20 h-28 object-cover rounded-lg"
+                  loading="lazy"
                   @error="handleImageError"
                 />
                 <div class="flex-1">
@@ -117,6 +118,7 @@
 import { ref } from 'vue'
 import { animeApiService } from '../../services/animeApiService'
 import { useErrorStore } from '../../stores/errorStore'
+import { useSearchCache } from '../../composables/useSearchCache'
 
 const props = defineProps({
   show: Boolean
@@ -125,6 +127,7 @@ const props = defineProps({
 const emit = defineEmits(['close', 'select'])
 
 const errorStore = useErrorStore()
+const searchCache = useSearchCache()
 const searchQuery = ref('')
 const results = ref([])
 const loading = ref(false)
@@ -149,6 +152,13 @@ const handleSearch = async () => {
     return
   }
 
+  // Verificar caché
+  const cached = searchCache.get(searchQuery.value)
+  if (cached) {
+    results.value = cached
+    return
+  }
+
   loading.value = true
   error.value = null
 
@@ -159,6 +169,9 @@ const handleSearch = async () => {
       { query: searchQuery.value }
     )
     results.value = data
+    
+    // Guardar en caché
+    searchCache.set(searchQuery.value, data)
   } catch (err) {
     // El error ya fue manejado por handleError y se mostrará en la notificación
     error.value = 'No se pudieron cargar los resultados. Intenta de nuevo.'

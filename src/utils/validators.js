@@ -129,9 +129,16 @@ export function validateEstado(estado, estadosValidos = []) {
   
   const sanitized = sanitizeString(estado)
   
-  // Si hay estados válidos definidos, validar contra ellos
-  if (estadosValidos.length > 0 && !estadosValidos.includes(sanitized)) {
-    return { valid: false, error: 'Estado no válido' }
+  // Si hay estados válidos definidos, validar contra ellos (comparación case-insensitive)
+  if (estadosValidos.length > 0) {
+    const estadoEncontrado = estadosValidos.find(e => 
+      e.trim().toLowerCase() === sanitized.toLowerCase()
+    )
+    if (!estadoEncontrado) {
+      return { valid: false, error: `Estado no válido. Estados válidos: ${estadosValidos.join(', ')}` }
+    }
+    // Usar el estado exacto de la lista de válidos para mantener consistencia
+    return { valid: true, value: estadoEncontrado.trim() }
   }
   
   if (sanitized.length > 100) {

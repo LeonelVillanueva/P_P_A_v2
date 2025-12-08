@@ -1,18 +1,26 @@
 <template>
   <!-- Card Móvil (diseño lista horizontal) -->
   <div 
-    @click="$emit('open', anime)"
+    @click="!isDragging && $emit('open', anime)"
+    :draggable="draggable"
+    @dragstart="handleDragStart"
+    @dragend="handleDragEnd"
     class="sm:hidden bg-white rounded-xl shadow-md border border-gray-200 mb-3 overflow-hidden active:scale-[0.98] transition-transform"
+    :class="{ 
+      'opacity-50 cursor-move': isDragging, 
+      'cursor-pointer': !isDragging 
+    }"
   >
     <div class="flex">
       <!-- Imagen lateral móvil -->
       <div class="relative w-24 h-24 flex-shrink-0">
-        <img 
-          v-if="anime.imagen_url" 
-          :src="anime.imagen_url" 
-          :alt="anime.nombre"
-          class="w-full h-full object-cover"
-        />
+      <img 
+        v-if="anime.imagen_url" 
+        :src="anime.imagen_url" 
+        :alt="anime.nombre"
+        class="w-full h-full object-cover"
+        loading="lazy"
+      />
         <div v-else class="w-full h-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
           <span class="text-white text-2xl font-bold">{{ anime.nombre.charAt(0) }}</span>
         </div>
@@ -52,19 +60,21 @@
           <div class="flex space-x-2">
             <button
               @click.stop="$emit('edit', anime)"
-              class="p-1.5 bg-purple-50 text-purple-600 rounded-lg active:bg-purple-100 transition-colors"
+              class="p-1.5 bg-purple-50 text-purple-600 rounded-lg active:bg-purple-100 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+              aria-label="Editar anime: {{ anime.nombre }}"
               title="Editar"
             >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
               </svg>
             </button>
             <button
               @click.stop="$emit('delete', anime)"
-              class="p-1.5 bg-red-50 text-red-600 rounded-lg active:bg-red-100 transition-colors"
+              class="p-1.5 bg-red-50 text-red-600 rounded-lg active:bg-red-100 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+              :aria-label="`Eliminar anime: ${anime.nombre}`"
               title="Eliminar"
             >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
             </button>
@@ -76,36 +86,43 @@
 
   <!-- Card Web (diseño original) -->
   <div 
-    @click="$emit('open', anime)"
-    class="hidden sm:block bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer overflow-hidden group border border-gray-100 hover:border-purple-200 transform hover:-translate-y-1"
+    @click="!isDragging && $emit('open', anime)"
+    :draggable="draggable"
+    @dragstart="handleDragStart"
+    @dragend="handleDragEnd"
+    class="hidden sm:block bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden group border border-gray-100 hover:border-purple-200 transform hover:-translate-y-1"
+    :class="{ 'opacity-50 cursor-move': isDragging, 'cursor-pointer': !isDragging }"
   >
     <div class="relative h-56 overflow-hidden">
       <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-      <img 
-        v-if="anime.imagen_url" 
-        :src="anime.imagen_url" 
-        :alt="anime.nombre"
-        class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-      />
+        <img 
+          v-if="anime.imagen_url" 
+          :src="anime.imagen_url" 
+          :alt="anime.nombre"
+          class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+          loading="lazy"
+        />
       <div v-else class="w-full h-full bg-gradient-to-br from-purple-500 via-pink-500 to-purple-600 flex items-center justify-center">
         <span class="text-white text-4xl font-bold drop-shadow-lg">{{ anime.nombre.charAt(0) }}</span>
       </div>
       <div class="absolute top-2 right-2 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex space-x-2">
         <button
           @click.stop="$emit('edit', anime)"
-          class="bg-white/90 backdrop-blur-sm rounded-full p-1.5 shadow-lg hover:bg-white transition-colors"
+          class="bg-white/90 backdrop-blur-sm rounded-full p-1.5 shadow-lg hover:bg-white transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+          :aria-label="`Editar anime: ${anime.nombre}`"
           title="Editar anime"
         >
-          <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
           </svg>
         </button>
         <button
           @click.stop="$emit('delete', anime)"
-          class="bg-red-500/90 backdrop-blur-sm rounded-full p-1.5 shadow-lg hover:bg-red-600 transition-colors"
+          class="bg-red-500/90 backdrop-blur-sm rounded-full p-1.5 shadow-lg hover:bg-red-600 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+          :aria-label="`Eliminar anime: ${anime.nombre}`"
           title="Eliminar anime"
         >
-          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
           </svg>
         </button>
@@ -143,15 +160,44 @@
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import { formatDate } from '../../utils/formatters'
 
-defineProps({
+const props = defineProps({
   anime: {
     type: Object,
     required: true
+  },
+  draggable: {
+    type: Boolean,
+    default: true
+  },
+  sectionId: {
+    type: String,
+    default: ''
   }
 })
 
-defineEmits(['open', 'edit', 'delete'])
+const emit = defineEmits(['open', 'edit', 'delete', 'drag-start', 'drag-end'])
+
+const isDragging = ref(false)
+
+const handleDragStart = (event) => {
+  if (!props.draggable) return
+  
+  isDragging.value = true
+  
+  // Guardar datos del anime en el evento
+  const animeData = { ...props.anime, sectionId: props.sectionId }
+  event.dataTransfer.setData('application/json', JSON.stringify(animeData))
+  event.dataTransfer.effectAllowed = 'move'
+  
+  emit('drag-start', event, animeData)
+}
+
+const handleDragEnd = (event) => {
+  isDragging.value = false
+  emit('drag-end', event)
+}
 </script>
 

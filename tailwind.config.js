@@ -8,5 +8,9 @@ export default {
     extend: {},
   },
   plugins: [],
+  // Utilidades de accesibilidad
+  corePlugins: {
+    // Asegurar que sr-only esté disponible
+  }
 }
 
