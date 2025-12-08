@@ -39,7 +39,9 @@ export const useAnimeStore = defineStore('anime', {
       try {
         this.estados = await configService.getEstados()
       } catch (error) {
-        console.error('Error fetching estados:', error)
+        if (import.meta.env.DEV) {
+          console.error('Error fetching estados:', error)
+        }
       }
     },
 
@@ -47,7 +49,9 @@ export const useAnimeStore = defineStore('anime', {
       try {
         this.temporadas = await configService.getTemporadas()
       } catch (error) {
-        console.error('Error fetching temporadas:', error)
+        if (import.meta.env.DEV) {
+          console.error('Error fetching temporadas:', error)
+        }
       }
     },
 

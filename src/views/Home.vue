@@ -85,9 +85,9 @@ import AnimeTabs from '../components/anime/AnimeTabs.vue'
 import AnimeGrid from '../components/anime/AnimeGrid.vue'
 import AnimeLoadingState from '../components/anime/AnimeLoadingState.vue'
 import AnimeEmptyState from '../components/anime/AnimeEmptyState.vue'
-import AnimeModal from '../components/AnimeModal.vue'
+import AnimeModal from '../components/anime/AnimeModal.vue'
 import AnimeSearchModal from '../components/anime/AnimeSearchModal.vue'
-import ConfigSection from '../components/ConfigSection.vue'
+import ConfigSection from '../components/config/ConfigSection.vue'
 
 const animeStore = useAnimeStore()
 const errorStore = useErrorStore()

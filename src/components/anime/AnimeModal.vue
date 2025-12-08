@@ -171,7 +171,7 @@
 
 <script setup>
 import { watch, computed } from 'vue'
-import { useAnimeForm } from '../composables/useAnimeForm'
+import { useAnimeForm } from '../../composables/useAnimeForm'
 
 const props = defineProps({
   show: Boolean,
