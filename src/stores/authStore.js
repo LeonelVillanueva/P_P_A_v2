@@ -119,9 +119,10 @@ export const useAuthStore = defineStore('auth', () => {
     
     if (result.success) {
       // Login exitoso - el token ya está guardado en authService
-      // Establecer autenticado sin necesidad de verificar de nuevo
-      isAuthenticated.value = true
+      // Establecer checkingAuth en false primero, luego isAuthenticated en true
+      // Esto asegura que App.vue reaccione correctamente
       checkingAuth.value = false
+      isAuthenticated.value = true
       
       // Resetear intentos fallidos
       resetAttempts(identifier)

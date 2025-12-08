@@ -28,9 +28,9 @@ router.beforeEach((to, from, next) => {
     
     // Verificar si está autenticado
     if (!authStore.isAuthenticated) {
-      // No está autenticado, permanecer en la página actual
-      // El componente App.vue mostrará el LoginModal
-      next(false)
+      // No está autenticado, pero permitir navegar
+      // App.vue mostrará el LoginModal automáticamente
+      next()
     } else {
       // Está autenticado, permitir acceso
       next()

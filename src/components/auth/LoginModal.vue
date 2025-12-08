@@ -92,16 +92,8 @@ const handleLogin = async () => {
       console.log('✅ Login exitoso')
       password.value = ''
       
-      // Pequeño delay para que el usuario vea el éxito antes de que desaparezca el modal
-      await new Promise(resolve => setTimeout(resolve, 300))
-      
       // El modal se ocultará automáticamente porque authStore.isAuthenticated es true
-      // Verificar que realmente está autenticado
-      if (!authStore.isAuthenticated) {
-        console.warn('⚠️ Login exitoso pero isAuthenticated es false, forzando actualización')
-        // Forzar actualización del estado
-        await authStore.checkStoredSession()
-      }
+      // No necesitamos delay ni verificaciones adicionales
     }
   } catch (err) {
     error.value = 'Error de autenticación. Intenta de nuevo.'

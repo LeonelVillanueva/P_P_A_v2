@@ -13,10 +13,10 @@
     </div>
     
     <!-- Mostrar login si no está autenticado y ya verificó -->
-    <LoginModal v-else-if="!authStore.isAuthenticated && hasCheckedOnce" />
+    <LoginModal v-if="!authStore.isAuthenticated && hasCheckedOnce && !authStore.checkingAuth" />
     
     <!-- Mostrar aplicación si está autenticado -->
-    <template v-else-if="authStore.isAuthenticated">
+    <template v-if="authStore.isAuthenticated">
       <router-view />
       
       <!-- Notificación de Error (Toast) -->
@@ -30,7 +30,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { useErrorStore } from './stores/errorStore'
 import { useAuthStore } from './stores/authStore'
 import ErrorNotification from './components/errors/ErrorNotification.vue'
@@ -40,18 +40,27 @@ const errorStore = useErrorStore()
 const authStore = useAuthStore()
 const hasCheckedOnce = ref(false)
 
-// Marcar que ya se verificó una vez
+// Marcar que ya se verificó una vez cuando checkingAuth cambia a false
 watch(() => authStore.checkingAuth, (checking) => {
   if (!checking) {
     hasCheckedOnce.value = true
   }
 })
 
-// También marcar después de un tiempo para evitar bloqueos infinitos
-setTimeout(() => {
-  if (!hasCheckedOnce.value) {
+// También marcar cuando isAuthenticated cambia a true (después de login exitoso)
+watch(() => authStore.isAuthenticated, (authenticated) => {
+  if (authenticated) {
     hasCheckedOnce.value = true
   }
-}, 3000) // Máximo 3 segundos de espera
+})
+
+// También marcar después de un tiempo para evitar bloqueos infinitos
+onMounted(() => {
+  setTimeout(() => {
+    if (!hasCheckedOnce.value) {
+      hasCheckedOnce.value = true
+    }
+  }, 3000) // Máximo 3 segundos de espera
+})
 </script>
 
