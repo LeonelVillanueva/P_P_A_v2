@@ -7,7 +7,9 @@
     "build": "vite build",
     "preview": "vite preview",
     "verify": "node scripts/verify-setup.js",
-    "diagnose": "node scripts/diagnose-storage.js"
+    "diagnose": "node scripts/diagnose-storage.js",
+    "hash-password": "node scripts/generate-password-hash.js",
+    "test-login": "node scripts/test-login.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.86.2",

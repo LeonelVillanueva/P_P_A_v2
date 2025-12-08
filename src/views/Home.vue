@@ -6,7 +6,7 @@
       @open-modal="animeModal.open()"
     />
 
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
       <!-- Sistema de Pestañas -->
       <AnimeTabs
         :active-tab="activeTab"
@@ -33,6 +33,8 @@
                 :section-name="getSectionName(currentTab)"
                 :count="getAnimesPorSeccion(currentTab).length"
                 @open-anime="animeModal.open"
+                @edit="animeModal.open"
+                @delete="handleDeleteAnime"
               />
             </div>
           </Transition>
@@ -194,6 +196,29 @@ const handleAnimeSelected = (animeData) => {
   }
   
   animeModal.open(animeToOpen)
+}
+
+const handleDeleteAnime = async (anime) => {
+  // Confirmar eliminación
+  if (!confirm(`¿Estás seguro de que quieres eliminar "${anime.nombre}"?\n\nEsta acción no se puede deshacer.`)) {
+    return
+  }
+
+  try {
+    await errorStore.handleError(
+      () => animeStore.deleteAnime(anime.id),
+      'Eliminar Anime',
+      { anime: anime.nombre }
+    )
+    
+    // Recargar animes después de eliminar
+    await animeStore.fetchAnimes()
+    
+    // Mostrar mensaje de éxito
+    errorStore.addError(`"${anime.nombre}" eliminado correctamente`, 'Éxito', { type: 'success' })
+  } catch (error) {
+    // El error ya fue manejado por handleError
+  }
 }
 
 onMounted(async () => {

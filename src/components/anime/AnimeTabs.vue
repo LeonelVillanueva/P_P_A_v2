@@ -8,7 +8,7 @@
           :key="seccion.id"
           @click="$emit('change-tab', seccion.id)"
           :class="[
-            'px-6 py-4 font-semibold text-sm transition-all duration-200 whitespace-nowrap border-b-2 relative',
+            'px-3 sm:px-4 md:px-6 py-3 sm:py-4 font-semibold text-xs sm:text-sm transition-all duration-200 whitespace-nowrap border-b-2 relative',
             activeTab === seccion.id
               ? 'text-purple-600 border-purple-600 bg-white'
               : 'text-gray-600 border-transparent hover:text-purple-500 hover:bg-white/50'
@@ -32,7 +32,7 @@
     </div>
 
     <!-- Tab Content -->
-    <div class="p-6 min-h-[500px]">
+    <div class="p-4 sm:p-6 min-h-[400px] sm:min-h-[500px]">
       <slot :active-tab="activeTab" />
     </div>
   </div>

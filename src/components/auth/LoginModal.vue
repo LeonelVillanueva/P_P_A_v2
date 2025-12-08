@@ -1,14 +1,14 @@
 <template>
   <div class="fixed inset-0 z-[9999] flex items-center justify-center bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
-    <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4 border-2 border-purple-200">
+    <div class="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 max-w-md w-full mx-4 border-2 border-purple-200">
       <div class="text-center mb-6">
         <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full mb-4">
           <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
           </svg>
         </div>
-        <h1 class="text-3xl font-bold text-gray-800 mb-2">Anime Saver</h1>
-        <p class="text-gray-600">Acceso Privado</p>
+        <h1 class="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">Anime Saver</h1>
+        <p class="text-sm sm:text-base text-gray-600">Acceso Privado</p>
       </div>
 
       <form @submit.prevent="handleLogin" class="space-y-4">
@@ -64,17 +64,36 @@ const handleLogin = async () => {
   loading.value = true
   error.value = ''
 
-  // Simular verificación (pequeño delay para UX)
-  await new Promise(resolve => setTimeout(resolve, 300))
+  // Pequeño delay para UX (siempre el mismo tiempo para evitar timing attacks)
+  const startTime = Date.now()
+  const minDelay = 500 // Delay mínimo para evitar timing attacks
 
-  const success = authStore.login(password.value)
+  try {
+    const result = await authStore.login(password.value)
+    
+    // Asegurar delay mínimo
+    const elapsed = Date.now() - startTime
+    if (elapsed < minDelay) {
+      await new Promise(resolve => setTimeout(resolve, minDelay - elapsed))
+    }
 
-  if (!success) {
-    error.value = 'Contraseña incorrecta'
-    password.value = ''
-    loading.value = false
-  } else {
-    // El store manejará el cambio de estado
+    if (!result.success) {
+      error.value = result.error || 'Contraseña incorrecta'
+      password.value = ''
+      
+      // Mostrar intentos restantes si están disponibles
+      if (result.remainingAttempts !== undefined) {
+        error.value += ` (${result.remainingAttempts} intentos restantes)`
+      }
+    } else {
+      // Login exitoso - hacer refresh para cargar la aplicación
+      window.location.reload()
+      return // No necesitamos hacer loading.value = false porque se recarga
+    }
+  } catch (err) {
+    error.value = 'Error de autenticación. Intenta de nuevo.'
+    console.error('Login error:', err)
+  } finally {
     loading.value = false
   }
 }

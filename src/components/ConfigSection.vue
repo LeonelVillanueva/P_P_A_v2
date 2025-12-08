@@ -5,9 +5,9 @@
       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
       @click.self="$emit('close')"
     >
-      <div class="bg-white rounded-3xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col border border-gray-100">
+      <div class="bg-white rounded-3xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col border border-gray-100 m-2 sm:m-0">
         <!-- Header -->
-        <div class="bg-gradient-to-r from-purple-600 to-pink-600 px-8 py-6 flex justify-between items-center">
+        <div class="bg-gradient-to-r from-purple-600 to-pink-600 px-4 sm:px-6 md:px-8 py-4 sm:py-6 flex justify-between items-center">
           <div class="flex items-center space-x-4">
             <div class="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg">
               <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -16,8 +16,8 @@
               </svg>
             </div>
             <div>
-              <h2 class="text-3xl font-bold text-white">Configuración</h2>
-              <p class="text-white/80 text-sm mt-1">Personaliza estados y temporadas</p>
+              <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-white">Configuración</h2>
+              <p class="text-white/80 text-xs sm:text-sm mt-1 hidden sm:block">Personaliza estados y temporadas</p>
             </div>
           </div>
           <button 
@@ -31,8 +31,8 @@
         </div>
 
         <!-- Content -->
-        <div class="flex-1 overflow-y-auto p-8 bg-gradient-to-br from-gray-50 to-purple-50/30">
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div class="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 bg-gradient-to-br from-gray-50 to-purple-50/30">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
 
             <!-- Estados -->
             <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">

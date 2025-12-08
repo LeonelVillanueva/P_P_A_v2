@@ -8,12 +8,14 @@
         {{ count }} {{ formatAnimeCount(count) }}
       </span>
     </div>
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
       <AnimeCard 
         v-for="anime in animes" 
         :key="anime.id"
         :anime="anime"
         @open="$emit('open-anime', anime)"
+        @edit="$emit('edit', anime)"
+        @delete="$emit('delete', anime)"
       />
     </div>
   </div>
@@ -29,6 +31,6 @@ defineProps({
   count: Number
 })
 
-defineEmits(['open-anime'])
+defineEmits(['open-anime', 'edit', 'delete'])
 </script>
 

@@ -5,7 +5,7 @@
       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50"
       @click.self="$emit('close')"
     >
-      <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-100">
+      <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] sm:max-h-[90vh] overflow-y-auto border border-gray-100 m-2 sm:m-0">
         <div class="sticky top-0 bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-5 flex justify-between items-center rounded-t-2xl">
           <h2 class="text-2xl font-bold text-white flex items-center space-x-2">
             <svg v-if="isEditing" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -39,7 +39,7 @@
           </div>
         </div>
 
-        <form @submit.prevent="handleSubmit" class="p-6 space-y-6 bg-gray-50/50">
+        <form @submit.prevent="handleSubmit" class="p-4 sm:p-6 space-y-4 sm:space-y-6 bg-gray-50/50">
           <!-- Imagen -->
           <div class="bg-white rounded-xl p-5 border border-gray-200">
             <label class="block text-sm font-semibold text-gray-700 mb-3 flex items-center space-x-2">
