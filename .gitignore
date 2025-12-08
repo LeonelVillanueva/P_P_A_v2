@@ -42,3 +42,6 @@ build/
 # OS files
 Thumbs.db
 .DS_Store
+
+# Middleware (contiene lógica de protección)
+# Nota: El middleware.js se sube a GitHub, pero la contraseña está en variables de entorno

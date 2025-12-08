@@ -35,6 +35,16 @@
             </svg>
             <span>Nuevo Anime</span>
           </button>
+          <button
+            @click="handleLogout"
+            class="px-4 py-2.5 bg-red-500/10 hover:bg-red-500/20 border border-red-200 text-red-600 rounded-xl font-medium transition-all duration-200 flex items-center space-x-2"
+            title="Cerrar sesión"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            <span class="hidden sm:inline">Salir</span>
+          </button>
         </div>
       </div>
     </div>
@@ -42,6 +52,16 @@
 </template>
 
 <script setup>
+import { useAuthStore } from '../../stores/authStore'
+
+const authStore = useAuthStore()
+
+const handleLogout = () => {
+  authStore.logout()
+  // Recargar la página para mostrar el login
+  window.location.reload()
+}
+
 defineEmits(['open-config', 'open-modal'])
 </script>
 
