@@ -1,0 +1,24 @@
+{
+  "name": "paginaanimev2",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "verify": "node scripts/verify-setup.js",
+    "diagnose": "node scripts/diagnose-storage.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.86.2",
+    "@vitejs/plugin-vue": "^6.0.2",
+    "autoprefixer": "^10.4.22",
+    "dotenv": "^17.2.3",
+    "pinia": "^3.0.4",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.18",
+    "vite": "^7.2.6",
+    "vue": "^3.5.25",
+    "vue-router": "^4.6.3"
+  }
+}
