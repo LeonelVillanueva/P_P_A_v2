@@ -85,14 +85,27 @@ const handleLogin = async () => {
       if (result.remainingAttempts !== undefined) {
         error.value += ` (${result.remainingAttempts} intentos restantes)`
       }
+      
+      console.error('❌ Login fallido:', result.error)
     } else {
-      // Login exitoso - hacer refresh para cargar la aplicación
-      window.location.reload()
-      return // No necesitamos hacer loading.value = false porque se recarga
+      // Login exitoso - el store ya estableció isAuthenticated
+      console.log('✅ Login exitoso')
+      password.value = ''
+      
+      // Pequeño delay para que el usuario vea el éxito antes de que desaparezca el modal
+      await new Promise(resolve => setTimeout(resolve, 300))
+      
+      // El modal se ocultará automáticamente porque authStore.isAuthenticated es true
+      // Verificar que realmente está autenticado
+      if (!authStore.isAuthenticated) {
+        console.warn('⚠️ Login exitoso pero isAuthenticated es false, forzando actualización')
+        // Forzar actualización del estado
+        await authStore.checkStoredSession()
+      }
     }
   } catch (err) {
     error.value = 'Error de autenticación. Intenta de nuevo.'
-    console.error('Login error:', err)
+    console.error('❌ Login error:', err)
   } finally {
     loading.value = false
   }

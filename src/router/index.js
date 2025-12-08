@@ -20,6 +20,12 @@ router.beforeEach((to, from, next) => {
   
   // Verificar si la ruta requiere autenticación
   if (to.meta.requiresAuth) {
+    // Si está verificando, permitir pasar (App.vue manejará el estado)
+    if (authStore.checkingAuth) {
+      next()
+      return
+    }
+    
     // Verificar si está autenticado
     if (!authStore.isAuthenticated) {
       // No está autenticado, permanecer en la página actual

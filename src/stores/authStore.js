@@ -42,10 +42,27 @@ export const useAuthStore = defineStore('auth', () => {
         return false
       }
       
-      // Verificar token con el servidor
-      const result = await verifyToken(token)
+      // Verificar token con el servidor (con timeout)
+      const verifyPromise = verifyToken(token)
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout')), 3000)
+      )
       
-      if (result.authenticated) {
+      let result
+      try {
+        result = await Promise.race([verifyPromise, timeoutPromise])
+      } catch (timeoutError) {
+        // Timeout o error - en desarrollo, si el token existe, permitir acceso
+        if (import.meta.env.DEV) {
+          console.warn('⚠️ Timeout verificando token, permitiendo acceso en desarrollo')
+          isAuthenticated.value = true
+          checkingAuth.value = false
+          return true
+        }
+        throw timeoutError
+      }
+      
+      if (result && result.authenticated) {
         isAuthenticated.value = true
         checkingAuth.value = false
         return true
@@ -58,6 +75,18 @@ export const useAuthStore = defineStore('auth', () => {
       }
     } catch (error) {
       console.error('Error checking session:', error)
+      
+      // En desarrollo, si hay error pero el token existe, permitir acceso
+      if (import.meta.env.DEV) {
+        const token = getStoredToken()
+        if (token) {
+          console.warn('⚠️ Error verificando token, permitiendo acceso en desarrollo')
+          isAuthenticated.value = true
+          checkingAuth.value = false
+          return true
+        }
+      }
+      
       isAuthenticated.value = false
       checkingAuth.value = false
       return false
@@ -89,8 +118,10 @@ export const useAuthStore = defineStore('auth', () => {
     const result = await apiLogin(password)
     
     if (result.success) {
-      // Login exitoso
+      // Login exitoso - el token ya está guardado en authService
+      // Establecer autenticado sin necesidad de verificar de nuevo
       isAuthenticated.value = true
+      checkingAuth.value = false
       
       // Resetear intentos fallidos
       resetAttempts(identifier)
