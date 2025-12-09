@@ -43,11 +43,15 @@
         @dismiss="errorStore.removeError(errorStore.errors[0].id)"
       />
     </template>
+    
+    <!-- Vercel Analytics (siempre activo) -->
+    <Analytics />
   </div>
 </template>
 
 <script setup>
 import { ref, watch, onMounted } from 'vue'
+import { Analytics } from '@vercel/analytics/vue'
 import { useErrorStore } from './stores/errorStore'
 import { useAuthStore } from './stores/authStore'
 import ErrorNotification from './components/errors/ErrorNotification.vue'
