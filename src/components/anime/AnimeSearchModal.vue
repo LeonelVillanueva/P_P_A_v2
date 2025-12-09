@@ -2,10 +2,17 @@
   <Transition name="modal">
     <div 
       v-if="show" 
+      ref="overlayRef"
       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-      @click.self="$emit('close')"
+      @mousedown="handleOverlayMouseDown"
+      @mouseup="handleOverlayMouseUp"
     >
-      <div class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[80vh] sm:max-h-[80vh] overflow-hidden flex flex-col border border-gray-100 m-2 sm:m-0">
+      <div 
+        ref="modalContentRef"
+        class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[80vh] sm:max-h-[80vh] overflow-hidden flex flex-col border border-gray-100 m-2 sm:m-0"
+        @mousedown.stop
+        @mouseup.stop
+      >
         <!-- Header -->
         <div class="bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-5 flex justify-between items-center">
           <h2 class="text-2xl font-bold text-white flex items-center space-x-2">
@@ -115,7 +122,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { animeApiService } from '../../services/animeApiService'
 import { useErrorStore } from '../../stores/errorStore'
 import { useSearchCache } from '../../composables/useSearchCache'
@@ -133,7 +140,31 @@ const results = ref([])
 const loading = ref(false)
 const error = ref(null)
 
+const overlayRef = ref(null)
+const modalContentRef = ref(null)
+const mouseDownTarget = ref(null)
+
 let searchTimeout = null
+
+// Manejar mousedown en el overlay
+const handleOverlayMouseDown = (event) => {
+  // Guardar dónde comenzó el mousedown
+  mouseDownTarget.value = event.target
+}
+
+// Manejar mouseup en el overlay
+const handleOverlayMouseUp = (event) => {
+  // Solo cerrar si tanto el mousedown como el mouseup fueron en el overlay
+  // (no en el contenido del modal)
+  if (
+    mouseDownTarget.value === overlayRef.value && 
+    event.target === overlayRef.value
+  ) {
+    emit('close')
+  }
+  // Resetear el flag
+  mouseDownTarget.value = null
+}
 
 // Debounce para evitar demasiadas requests
 const debouncedSearch = () => {
@@ -184,12 +215,55 @@ const selectAnime = (anime) => {
   // Solo extraer nombre e imagen_url de la API
   const formattedAnime = animeApiService.formatJikanAnime(anime)
   emit('select', formattedAnime)
+  
+  // Limpiar el campo de búsqueda y resultados
+  searchQuery.value = ''
+  results.value = []
+  error.value = null
+  
+  // Limpiar el timeout si existe
+  if (searchTimeout) {
+    clearTimeout(searchTimeout)
+    searchTimeout = null
+  }
+  
   emit('close')
 }
+
+// Limpiar cuando se cierra el modal
+watch(() => props.show, (newVal) => {
+  if (!newVal) {
+    // Cuando el modal se cierra, limpiar todo
+    searchQuery.value = ''
+    results.value = []
+    error.value = null
+    
+    // Limpiar el timeout si existe
+    if (searchTimeout) {
+      clearTimeout(searchTimeout)
+      searchTimeout = null
+    }
+  }
+})
 
 const handleImageError = (event) => {
   event.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23ddd" width="100" height="100"/%3E%3Ctext fill="%23999" font-family="sans-serif" font-size="14" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3ESin imagen%3C/text%3E%3C/svg%3E'
 }
+
+// Cerrar con Escape
+const handleEscape = (e) => {
+  if (e.key === 'Escape' && props.show) {
+    emit('close')
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('keydown', handleEscape)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('keydown', handleEscape)
+})
 </script>
 
 <style scoped>

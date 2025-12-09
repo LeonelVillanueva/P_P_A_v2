@@ -170,7 +170,7 @@
 </template>
 
 <script setup>
-import { watch, computed } from 'vue'
+import { watch, computed, onMounted, onUnmounted } from 'vue'
 import { useAnimeForm } from '../../composables/useAnimeForm'
 
 const props = defineProps({
@@ -178,7 +178,11 @@ const props = defineProps({
   anime: Object,
   estados: Array,
   temporadas: Array,
-  loading: Boolean
+  loading: Boolean,
+  defaultEstado: {
+    type: String,
+    default: ''
+  }
 })
 
 const emit = defineEmits(['close', 'submit', 'open-search'])
@@ -195,7 +199,19 @@ const {
 
 watch(() => props.show, (newVal) => {
   if (newVal) {
-    resetForm(props.anime)
+    if (props.anime && props.anime.id) {
+      // Si hay un anime con ID, es edición
+      resetForm(props.anime)
+    } else if (props.anime && props.anime.estado) {
+      // Si hay un anime sin ID pero con estado, usar ese estado
+      resetForm(props.anime)
+    } else if (props.defaultEstado) {
+      // Si no hay anime pero hay estado por defecto, usar ese estado
+      resetForm({ estado: props.defaultEstado })
+    } else {
+      // Si no hay nada, resetear normalmente
+      resetForm(null)
+    }
   }
 })
 
@@ -214,6 +230,21 @@ const handleImageError = (event) => {
   // Si la imagen de la API falla al cargar, mostrar placeholder
   event.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23ddd" width="100" height="100"/%3E%3Ctext fill="%23999" font-family="sans-serif" font-size="14" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3EImagen no disponible%3C/text%3E%3C/svg%3E'
 }
+
+// Cerrar con Escape
+const handleEscape = (e) => {
+  if (e.key === 'Escape' && props.show && !props.loading) {
+    emit('close')
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('keydown', handleEscape)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('keydown', handleEscape)
+})
 </script>
 
 <style scoped>

@@ -1,5 +1,5 @@
 import { supabase } from '../config/supabase'
-import { validateId, validateAnimeName, validateImageUrl, validateEstado, validateTemporadas } from '../utils/validators'
+import { validateId, validateAnimeName, validateImageUrl, validateEstado, validateTemporadas, validateAnimeData } from '../utils/validators'
 
 /**
  * Servicio para operaciones CRUD de animes

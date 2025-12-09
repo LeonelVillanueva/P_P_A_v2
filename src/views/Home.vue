@@ -3,7 +3,7 @@
     <!-- Header -->
     <AppHeader 
       @open-config="configModal.open()"
-      @open-modal="animeModal.open()"
+      @open-modal="handleOpenAnimeModal"
     />
 
     <div class="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
@@ -43,7 +43,7 @@
               <!-- Empty State -->
               <AnimeEmptyState 
                 v-else-if="filteredAnimes.length === 0"
-                @add-anime="animeModal.open()"
+                @add-anime="handleOpenAnimeModal"
               />
 
               <!-- Animes Grid -->
@@ -72,6 +72,7 @@
       :estados="animeStore.estados"
       :temporadas="animeStore.temporadas"
       :loading="savingAnime"
+      :default-estado="defaultEstadoForNewAnime"
       @close="animeModal.close()"
       @submit="handleSubmitAnime"
       @open-search="searchModal.open()"
@@ -128,7 +129,6 @@ import { useViewMode } from '../composables/useViewMode'
 import { useConfirmDialog } from '../composables/useConfirmDialog'
 import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts'
 import { useSuccessPopup } from '../composables/useSuccessPopup'
-import { getStateBySection } from '../constants/sections'
 import AppHeader from '../components/layout/AppHeader.vue'
 import AnimeTabs from '../components/anime/AnimeTabs.vue'
 import AnimeGrid from '../components/anime/AnimeGrid.vue'
@@ -152,7 +152,8 @@ const successPopup = useSuccessPopup()
 
 const savingAnime = ref(false)
 const savingConfig = ref(false)
-const activeTab = ref('vistos')
+// Active tab se inicializa dinámicamente cuando hay estados disponibles
+const activeTab = ref('')
 const searchQuery = ref('')
 const filters = ref({})
 const showStats = ref(false)
@@ -164,7 +165,8 @@ const {
   SECTIONS: sections,
   getAnimesPorSeccion,
   getSectionName,
-  getSectionCount
+  getSectionCount,
+  getStateBySection
 } = useAnimeSections(animeStore)
 
 // Animes filtrados
@@ -265,10 +267,13 @@ const handleAnimeSelected = (animeData) => {
   
   // Abrir modal de anime con solo nombre e imagen_url de la API
   // El usuario puede completar estado y temporadas manualmente
+  // Usar el estado de la sección actual si está disponible
+  const estadoInicial = defaultEstadoForNewAnime.value || animeStore.estados[0] || ''
+  
   const animeToOpen = {
     nombre: animeData.nombre || '',
     imagen_url: animeData.imagen_url || null,
-    estado: animeStore.estados[0] || '',
+    estado: estadoInicial,
     temporadas: []
   }
   
@@ -364,7 +369,7 @@ useKeyboardShortcuts({
     }
   },
   'ctrl+n': () => {
-    animeModal.open()
+    handleOpenAnimeModal()
   },
   'ctrl+,': () => {
     configModal.open()
@@ -379,6 +384,37 @@ watch(activeTab, () => {
   searchQuery.value = ''
   filters.value = {}
 })
+
+// Estado por defecto para nuevo anime basado en la sección actual
+const defaultEstadoForNewAnime = computed(() => {
+  if (activeTab.value && getStateBySection) {
+    return getStateBySection(activeTab.value) || ''
+  }
+  return ''
+})
+
+// Manejar apertura del modal de anime
+const handleOpenAnimeModal = () => {
+  // Si hay un estado por defecto, pasarlo al modal
+  const estadoInicial = defaultEstadoForNewAnime.value
+  if (estadoInicial) {
+    animeModal.open({
+      estado: estadoInicial
+    })
+  } else {
+    animeModal.open()
+  }
+}
+
+// Inicializar activeTab cuando los estados estén disponibles
+watch(() => sections.value, (newSections) => {
+  if (newSections && newSections.length > 0) {
+    // Si no hay tab activo o el tab activo ya no existe, seleccionar el primero
+    if (!activeTab.value || !newSections.find(s => s.id === activeTab.value)) {
+      activeTab.value = newSections[0].id
+    }
+  }
+}, { immediate: true })
 
 onMounted(async () => {
   try {
@@ -396,6 +432,11 @@ onMounted(async () => {
     )
   } catch (error) {
     // Errores ya manejados
+  }
+  
+  // Inicializar activeTab si aún no está inicializado
+  if (!activeTab.value && sections.value && sections.value.length > 0) {
+    activeTab.value = sections.value[0].id
   }
   
   // Enfocar el tablist después de cargar los datos (para que las flechas funcionen inmediatamente)

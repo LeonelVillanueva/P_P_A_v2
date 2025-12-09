@@ -157,7 +157,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 
 const props = defineProps({
   show: Boolean,
@@ -204,6 +204,21 @@ const saveTemporadas = () => {
   const temporadasFiltradas = temporadasLocales.value.filter(t => t.trim() !== '')
   emit('save-temporadas', temporadasFiltradas)
 }
+
+// Cerrar con Escape
+const handleEscape = (e) => {
+  if (e.key === 'Escape' && props.show && !props.saving) {
+    emit('close')
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('keydown', handleEscape)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('keydown', handleEscape)
+})
 </script>
 
 <style scoped>
