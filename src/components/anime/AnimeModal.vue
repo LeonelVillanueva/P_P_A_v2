@@ -2,10 +2,17 @@
   <Transition name="modal">
     <div 
       v-if="show" 
+      ref="overlayRef"
       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50"
-      @click.self="$emit('close')"
+      @mousedown="handleOverlayMouseDown"
+      @mouseup="handleOverlayMouseUp"
     >
-      <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] sm:max-h-[90vh] overflow-y-auto border border-gray-100 m-2 sm:m-0">
+      <div 
+        ref="modalContentRef"
+        class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] sm:max-h-[90vh] overflow-y-auto border border-gray-100 m-2 sm:m-0"
+        @mousedown.stop
+        @mouseup.stop
+      >
         <div class="sticky top-0 bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-5 flex justify-between items-center rounded-t-2xl">
           <h2 class="text-2xl font-bold text-white flex items-center space-x-2">
             <svg v-if="isEditing" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -187,6 +194,10 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'submit', 'open-search'])
 
+const overlayRef = ref(null)
+const modalContentRef = ref(null)
+const mouseDownTarget = ref(null)
+
 const {
   formData,
   previewImage,
@@ -196,6 +207,27 @@ const {
   handleImageChange,
   getFormData
 } = useAnimeForm(computed(() => props.anime))
+
+// Manejar mousedown en el overlay
+const handleOverlayMouseDown = (event) => {
+  // Guardar dónde comenzó el mousedown
+  mouseDownTarget.value = event.target
+}
+
+// Manejar mouseup en el overlay
+const handleOverlayMouseUp = (event) => {
+  // Solo cerrar si tanto el mousedown como el mouseup fueron en el overlay
+  // (no en el contenido del modal)
+  if (
+    mouseDownTarget.value === overlayRef.value && 
+    event.target === overlayRef.value &&
+    !props.loading
+  ) {
+    emit('close')
+  }
+  // Resetear el flag
+  mouseDownTarget.value = null
+}
 
 watch(() => props.show, (newVal) => {
   if (newVal) {

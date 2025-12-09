@@ -2,10 +2,17 @@
   <Transition name="modal">
     <div 
       v-if="show" 
+      ref="overlayRef"
       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-      @click.self="$emit('close')"
+      @mousedown="handleOverlayMouseDown"
+      @mouseup="handleOverlayMouseUp"
     >
-      <div class="bg-white rounded-3xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col border border-gray-100 m-2 sm:m-0">
+      <div 
+        ref="modalContentRef"
+        class="bg-white rounded-3xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col border border-gray-100 m-2 sm:m-0"
+        @mousedown.stop
+        @mouseup.stop
+      >
         <!-- Header -->
         <div class="bg-gradient-to-r from-purple-600 to-pink-600 px-4 sm:px-6 md:px-8 py-4 sm:py-6 flex justify-between items-center">
           <div class="flex items-center space-x-4">
@@ -158,6 +165,31 @@
 
 <script setup>
 import { ref, watch, onMounted, onUnmounted } from 'vue'
+
+const overlayRef = ref(null)
+const modalContentRef = ref(null)
+const mouseDownTarget = ref(null)
+
+// Manejar mousedown en el overlay
+const handleOverlayMouseDown = (event) => {
+  // Guardar dónde comenzó el mousedown
+  mouseDownTarget.value = event.target
+}
+
+// Manejar mouseup en el overlay
+const handleOverlayMouseUp = (event) => {
+  // Solo cerrar si tanto el mousedown como el mouseup fueron en el overlay
+  // (no en el contenido del modal)
+  if (
+    mouseDownTarget.value === overlayRef.value && 
+    event.target === overlayRef.value &&
+    !props.saving
+  ) {
+    emit('close')
+  }
+  // Resetear el flag
+  mouseDownTarget.value = null
+}
 
 const props = defineProps({
   show: Boolean,

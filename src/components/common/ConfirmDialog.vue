@@ -2,15 +2,21 @@
   <Transition name="modal">
     <div 
       v-if="show" 
+      ref="overlayRef"
       class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-labelledby="confirm-title"
       aria-describedby="confirm-description"
-      @click.self="$emit('cancel')"
-      ref="modalRef"
+      @mousedown="handleOverlayMouseDown"
+      @mouseup="handleOverlayMouseUp"
     >
-      <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full border-2 border-gray-200">
+      <div 
+        ref="modalContentRef"
+        class="bg-white rounded-2xl shadow-2xl max-w-md w-full border-2 border-gray-200"
+        @mousedown.stop
+        @mouseup.stop
+      >
         <!-- Header -->
         <div class="p-6 border-b border-gray-200">
           <div class="flex items-center space-x-3">
@@ -104,6 +110,29 @@ const props = defineProps({
 const emit = defineEmits(['confirm', 'cancel'])
 
 const modalRef = ref(null)
+const overlayRef = ref(null)
+const modalContentRef = ref(null)
+const mouseDownTarget = ref(null)
+
+// Manejar mousedown en el overlay
+const handleOverlayMouseDown = (event) => {
+  // Guardar dónde comenzó el mousedown
+  mouseDownTarget.value = event.target
+}
+
+// Manejar mouseup en el overlay
+const handleOverlayMouseUp = (event) => {
+  // Solo cerrar si tanto el mousedown como el mouseup fueron en el overlay
+  // (no en el contenido del modal)
+  if (
+    mouseDownTarget.value === overlayRef.value && 
+    event.target === overlayRef.value
+  ) {
+    emit('cancel')
+  }
+  // Resetear el flag
+  mouseDownTarget.value = null
+}
 
 const iconClass = computed(() => {
   const classes = {
