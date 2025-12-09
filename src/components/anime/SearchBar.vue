@@ -69,6 +69,7 @@
 
       <!-- Resultados de búsqueda -->
       <div v-if="searchQuery || hasActiveFilters" class="mt-3 text-sm text-gray-600">
+        <span v-if="isGlobalSearch" class="text-purple-600 font-semibold">🔍 Búsqueda global:</span>
         Mostrando {{ filteredCount }} de {{ totalCount }} animes
       </div>
     </div>
@@ -94,6 +95,10 @@ const props = defineProps({
   filteredCount: {
     type: Number,
     default: 0
+  },
+  isGlobalSearch: {
+    type: Boolean,
+    default: false
   }
 })
 

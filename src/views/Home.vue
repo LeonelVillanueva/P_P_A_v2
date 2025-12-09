@@ -33,6 +33,7 @@
                 :temporadas="animeStore.temporadas"
                 :total-count="animeStore.animes.length"
                 :filtered-count="filteredAnimes.length"
+                :is-global-search="hasGlobalSearch"
                 @update:search="searchQuery = $event"
                 @update:filters="filters = $event"
               />
@@ -169,20 +170,40 @@ const {
   getStateBySection
 } = useAnimeSections(animeStore)
 
+// Verificar si hay búsqueda global activa
+const hasGlobalSearch = computed(() => {
+  return searchQuery.value.trim().length > 0 || 
+         filters.value.estado || 
+         filters.value.temporada || 
+         filters.value.sortBy
+})
+
 // Animes filtrados
 const filteredAnimes = computed(() => {
-  const seccionAnimes = getAnimesPorSeccion(activeTab.value)
+  // Si hay búsqueda o filtros activos, buscar globalmente (en todas las secciones)
+  const hasActiveSearch = searchQuery.value.trim().length > 0
+  const hasActiveFilters = filters.value.estado || filters.value.temporada || filters.value.sortBy
   
   const filterOptions = {
     search: searchQuery.value,
-    estado: filters.value.estado || getStateBySection(activeTab.value),
+    estado: hasActiveSearch || hasActiveFilters 
+      ? filters.value.estado || undefined  // Si hay búsqueda/filtros, no forzar estado de sección
+      : getStateBySection(activeTab.value),  // Si no hay búsqueda, usar estado de sección activa
     temporadas: filters.value.temporada ? [filters.value.temporada] : undefined,
     sortBy: filters.value.sortBy
   }
   
-  return animeStore.filteredAnimes(filterOptions).filter(anime => 
-    seccionAnimes.some(a => a.id === anime.id)
-  )
+  let result = animeStore.filteredAnimes(filterOptions)
+  
+  // Si no hay búsqueda ni filtros activos, mostrar solo animes de la sección actual
+  if (!hasActiveSearch && !hasActiveFilters) {
+    const seccionAnimes = getAnimesPorSeccion(activeTab.value)
+    result = result.filter(anime => 
+      seccionAnimes.some(a => a.id === anime.id)
+    )
+  }
+  
+  return result
 })
 
 const handleSubmitAnime = async (formData) => {
