@@ -408,8 +408,9 @@ watch(activeTab, () => {
 
 // Estado por defecto para nuevo anime basado en la sección actual
 const defaultEstadoForNewAnime = computed(() => {
-  if (activeTab.value && getStateBySection) {
-    return getStateBySection(activeTab.value) || ''
+  if (activeTab.value) {
+    const estado = getStateBySection(activeTab.value)
+    return estado || ''
   }
   return ''
 })

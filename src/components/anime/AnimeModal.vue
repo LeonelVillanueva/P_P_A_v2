@@ -177,7 +177,7 @@
 </template>
 
 <script setup>
-import { watch, computed, onMounted, onUnmounted } from 'vue'
+import { ref, watch, computed, onMounted, onUnmounted } from 'vue'
 import { useAnimeForm } from '../../composables/useAnimeForm'
 
 const props = defineProps({
