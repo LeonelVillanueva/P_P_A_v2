@@ -119,9 +119,28 @@ export async function login(password) {
     }
     
     if (!response.ok) {
+      // Si es error 500, intentar usar fallback en desarrollo
+      if (response.status === 500 && USE_FALLBACK_AUTH) {
+        console.warn('⚠️ Error 500 del servidor, usando autenticación local (modo desarrollo)')
+        console.warn('💡 Asegúrate de configurar JWT_SECRET y VITE_SITE_PASSWORD en tu .env')
+        return await fallbackLogin(password)
+      }
+      
+      // Proporcionar mensaje de error más descriptivo
+      let errorMessage = data.error || 'Error de autenticación'
+      if (response.status === 500) {
+        if (data.hint) {
+          errorMessage += `. ${data.hint}`
+        } else if (data.message) {
+          errorMessage += `. ${data.message}`
+        } else {
+          errorMessage += '. Verifica la configuración del servidor (JWT_SECRET y VITE_SITE_PASSWORD)'
+        }
+      }
+      
       return {
         success: false,
-        error: data.error || 'Error de autenticación'
+        error: errorMessage
       }
     }
     

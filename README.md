@@ -96,14 +96,22 @@ npm run hash-password "tu-contraseña"
 ### **Vercel**
 
 1. Conecta tu repositorio a Vercel
-2. Configura las variables de entorno en Vercel Dashboard
-3. Deploy automático en cada push
+2. Configura las variables de entorno en Vercel Dashboard:
+   - Ve a tu proyecto en Vercel Dashboard
+   - Settings → Environment Variables
+   - Agrega las siguientes variables:
+     - `JWT_SECRET` - Secret para JWT (genera uno seguro)
+     - `VITE_SITE_PASSWORD_HASH` o `VITE_SITE_PASSWORD` - Hash o contraseña del sitio
+     - `VITE_SUPABASE_URL` - URL de tu proyecto Supabase (formato: `https://xxxxx.supabase.co`)
+     - `VITE_SUPABASE_ANON_KEY` - Anon public key de Supabase (Settings → API → anon public)
+3. **IMPORTANTE:** Después de agregar las variables, haz un nuevo deploy
+4. Deploy automático en cada push
 
-**Variables de entorno en Vercel:**
-- `JWT_SECRET`
-- `VITE_SITE_PASSWORD_HASH` o `VITE_SITE_PASSWORD`
-- `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_ANON_KEY`
+**⚠️ Si ves el error "Failed to fetch":**
+- Verifica que todas las variables de entorno estén configuradas en Vercel
+- Asegúrate de que `VITE_SUPABASE_URL` tenga el formato correcto: `https://xxxxx.supabase.co`
+- Verifica que `VITE_SUPABASE_ANON_KEY` sea la clave "anon public" (no la service_role)
+- Después de agregar/modificar variables, haz un nuevo deploy
 
 ## 📚 Documentación
 

@@ -130,7 +130,11 @@ app.post('/api/auth', async (req, res) => {
     if (!JWT_SECRET) {
       console.error('❌ JWT_SECRET no está configurado')
       console.error('📝 Agrega JWT_SECRET a tu archivo .env')
-      return res.status(500).json({ error: 'Server configuration error: JWT_SECRET no configurado' })
+      console.error('📝 O usa: VITE_SITE_PASSWORD_HASH o VITE_SITE_PASSWORD como fallback')
+      return res.status(500).json({ 
+        error: 'Server configuration error: JWT_SECRET no configurado',
+        hint: 'Agrega JWT_SECRET, VITE_SITE_PASSWORD_HASH o VITE_SITE_PASSWORD a tu archivo .env'
+      })
     }
     
     console.log('🔐 Petición recibida:', { action, hasPassword: !!password, hasToken: !!token })
@@ -160,7 +164,16 @@ app.post('/api/auth', async (req, res) => {
         console.log('🔐 Comparación directa:', isValid ? '✅ Válida' : '❌ Inválida')
       } else {
         console.error('❌ No hay contraseña configurada')
-        return res.status(500).json({ error: 'Authentication not configured. Agrega VITE_SITE_PASSWORD o VITE_SITE_PASSWORD_HASH a .env' })
+        console.error('📝 Variables disponibles:', {
+          hasJWT_SECRET: !!JWT_SECRET,
+          hasVITE_SITE_PASSWORD_HASH: !!process.env.VITE_SITE_PASSWORD_HASH,
+          hasVITE_SITE_PASSWORD: !!process.env.VITE_SITE_PASSWORD
+        })
+        return res.status(500).json({ 
+          error: 'Authentication not configured',
+          message: 'Agrega VITE_SITE_PASSWORD o VITE_SITE_PASSWORD_HASH a tu archivo .env',
+          hint: 'Ejecuta: npm run hash-password "tu-contraseña" para generar el hash'
+        })
       }
       
       if (isValid) {

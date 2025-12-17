@@ -10,14 +10,33 @@ export const animeService = {
    * Obtener todos los animes
    */
   async getAll() {
-    const { data, error } = await supabase
-      .from('animes')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(1000) // Limitar resultados para prevenir ataques
-    
-    if (error) throw error
-    return data || []
+    try {
+      const { data, error } = await supabase
+        .from('animes')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(1000) // Limitar resultados para prevenir ataques
+      
+      if (error) {
+        // Mejorar mensaje de error
+        if (error.message && error.message.includes('Failed to fetch')) {
+          throw new Error('No se pudo conectar con la base de datos. Verifica tu conexión a internet y la configuración de Supabase.')
+        }
+        throw error
+      }
+      return data || []
+    } catch (error) {
+      // Si es un error de red, proporcionar un mensaje más claro
+      if (error instanceof TypeError && error.message === 'Failed to fetch') {
+        throw new Error('Error de conexión: No se pudo conectar con Supabase. Verifica que las variables de entorno VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY estén configuradas correctamente.')
+      }
+      // Detectar específicamente ERR_NAME_NOT_RESOLVED
+      if (error.message && error.message.includes('ERR_NAME_NOT_RESOLVED')) {
+        throw new Error('El dominio de Supabase no se puede resolver. Verifica que la URL (VITE_SUPABASE_URL) sea correcta y que el proyecto no haya sido pausado o eliminado en Supabase.')
+      }
+      // Re-lanzar otros errores
+      throw error
+    }
   },
 
   /**
