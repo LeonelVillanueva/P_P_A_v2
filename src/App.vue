@@ -56,10 +56,18 @@ import { useErrorStore } from './stores/errorStore'
 import { useAuthStore } from './stores/authStore'
 import ErrorNotification from './components/errors/ErrorNotification.vue'
 import LoginModal from './components/auth/LoginModal.vue'
+import { useSupabaseKeepAlive } from './composables/useSupabaseKeepAlive'
 
 const errorStore = useErrorStore()
 const authStore = useAuthStore()
 const hasCheckedOnce = ref(false)
+
+// Activar sistema de keep-alive para evitar que Supabase se pause por inactividad
+// Los pings se ejecutan cada 5 minutos automáticamente
+useSupabaseKeepAlive({
+  interval: 5 * 60 * 1000, // 5 minutos
+  enabled: true
+})
 
 // Marcar que ya se verificó una vez cuando checkingAuth cambia a false
 watch(() => authStore.checkingAuth, (checking) => {
