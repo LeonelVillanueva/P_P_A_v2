@@ -4,7 +4,11 @@
     <div class="px-3 py-3">
       <!-- Título compacto móvil -->
       <div class="flex items-center justify-between mb-3">
-        <div class="flex items-center space-x-2">
+        <button 
+          @click="goToHome"
+          class="flex items-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity"
+          aria-label="Ir al inicio"
+        >
           <div class="w-9 h-9 bg-gradient-to-br from-purple-600 to-pink-600 rounded-lg flex items-center justify-center shadow-md">
             <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
@@ -13,7 +17,7 @@
           <h1 class="text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
             Anime Saver
           </h1>
-        </div>
+        </button>
         <button
           @click="handleLogout"
           class="p-2 bg-red-50 hover:bg-red-100 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
@@ -56,7 +60,11 @@
   <header class="hidden sm:block bg-white/80 backdrop-blur-md shadow-lg sticky top-0 z-40 border-b border-purple-100">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
       <div class="flex justify-between items-center">
-        <div class="flex items-center space-x-2 sm:space-x-3">
+        <button 
+          @click="goToHome"
+          class="flex items-center space-x-2 sm:space-x-3 cursor-pointer hover:opacity-80 transition-opacity"
+          aria-label="Ir al inicio"
+        >
           <div class="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
             <svg class="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
@@ -68,8 +76,19 @@
             </h1>
             <p class="text-xs text-gray-500 mt-0.5 hidden sm:block">Gestiona tus animes favoritos</p>
           </div>
-        </div>
+        </button>
         <div class="flex space-x-1.5 sm:space-x-3">
+          <button 
+            @click="$emit('open-calendar')"
+            class="px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl font-medium transition-all duration-200 flex items-center space-x-1.5 sm:space-x-2 text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 hover:shadow-md text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+            aria-label="Vista de calendario"
+            title="Calendario (Ctrl+K → Calendario)"
+          >
+            <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <span class="hidden sm:inline">Calendario</span>
+          </button>
           <button 
             @click="$emit('open-config')"
             class="px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl font-medium transition-all duration-200 flex items-center space-x-1.5 sm:space-x-2 text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 hover:shadow-md text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
@@ -111,9 +130,15 @@
 </template>
 
 <script setup>
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/authStore'
 
+const router = useRouter()
 const authStore = useAuthStore()
+
+const goToHome = () => {
+  router.push('/')
+}
 
 const handleLogout = () => {
   authStore.logout()
@@ -121,6 +146,6 @@ const handleLogout = () => {
   window.location.reload()
 }
 
-defineEmits(['open-config', 'open-modal'])
+defineEmits(['open-config', 'open-modal', 'open-calendar'])
 </script>
 

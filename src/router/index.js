@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
 import Home from '../views/Home.vue'
+import Calendar from '../views/Calendar.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -9,6 +10,12 @@ const router = createRouter({
       path: '/',
       name: 'home',
       component: Home,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/calendar',
+      name: 'calendar',
+      component: Calendar,
       meta: { requiresAuth: true }
     }
   ]

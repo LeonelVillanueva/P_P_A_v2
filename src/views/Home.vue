@@ -1,9 +1,13 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30">
+  <div 
+    class="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30"
+    @contextmenu.prevent
+  >
     <!-- Header -->
     <AppHeader 
       @open-config="configModal.open()"
       @open-modal="handleOpenAnimeModal"
+      @open-calendar="router.push('/calendar')"
     />
 
     <div class="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
@@ -68,6 +72,8 @@
                 @open-anime="animeModal.open"
                 @edit="animeModal.open"
                 @delete="handleDeleteAnime"
+                @hover="handleAnimeHover"
+                @leave="handleAnimeLeave"
                 @change-view="setViewMode"
               />
             </div>
@@ -127,6 +133,48 @@
       :duration="successPopup.duration.value"
       @close="successPopup.close"
     />
+
+    <!-- Command Palette -->
+    <CommandPalette
+      :is-open="commandPalette.isOpen.value"
+      :query="commandPalette.query.value"
+      :selected-index="commandPalette.selectedIndex.value"
+      :commands="commandPalette.commands.value"
+      @close="commandPalette.close()"
+      @command="handleCommand"
+      @update:query="commandPalette.query.value = $event"
+      @select-next="commandPalette.selectNext()"
+      @select-previous="commandPalette.selectPrevious()"
+    />
+
+    <!-- Historial de Actividad -->
+    <ActivityHistory
+      :show="showHistory"
+      :history="activityHistory.history.value"
+      @close="showHistory = false"
+      @clear="activityHistory.clearHistory()"
+    />
+
+    <!-- Vista Rápida (Quick View) -->
+    <AnimeQuickView
+      :show="quickView.show"
+      :anime="quickView.anime"
+      :x="quickView.x"
+      :y="quickView.y"
+      @edit="animeModal.open"
+      @view="animeModal.open"
+    />
+
+    <!-- Indicador de auto-guardado -->
+    <div
+      v-if="autoSave.hasUnsavedChanges.value"
+      class="fixed bottom-4 left-4 px-4 py-2 bg-yellow-100 border border-yellow-300 rounded-lg shadow-lg z-40 flex items-center space-x-2"
+    >
+      <svg class="w-5 h-5 text-yellow-600 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+      </svg>
+      <span class="text-sm font-medium text-yellow-800">Guardando cambios...</span>
+    </div>
   </div>
 </template>
 
@@ -141,6 +189,10 @@ import { useViewMode } from '../composables/useViewMode'
 import { useConfirmDialog } from '../composables/useConfirmDialog'
 import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts'
 import { useSuccessPopup } from '../composables/useSuccessPopup'
+import { useCommandPalette } from '../composables/useCommandPalette'
+import { useActivityHistory } from '../composables/useActivityHistory'
+import { useAutoSave } from '../composables/useAutoSave'
+import { useRouter } from 'vue-router'
 import AppHeader from '../components/layout/AppHeader.vue'
 import AnimeTabs from '../components/anime/AnimeTabs.vue'
 import AnimeGrid from '../components/anime/AnimeGrid.vue'
@@ -154,7 +206,11 @@ import StatsDashboard from '../components/anime/StatsDashboard.vue'
 import SearchBar from '../components/anime/SearchBar.vue'
 import ConfirmDialog from '../components/common/ConfirmDialog.vue'
 import SuccessPopup from '../components/common/SuccessPopup.vue'
+import CommandPalette from '../components/common/CommandPalette.vue'
+import ActivityHistory from '../components/common/ActivityHistory.vue'
+import AnimeQuickView from '../components/anime/AnimeQuickView.vue'
 
+const router = useRouter()
 const animeStore = useAnimeStore()
 const errorStore = useErrorStore()
 const animeModal = useModal()
@@ -163,6 +219,32 @@ const searchModal = useModal()
 const confirmDialog = useConfirmDialog()
 const successPopup = useSuccessPopup()
 
+// Command Palette
+const commandPalette = useCommandPalette()
+
+// Historial de actividad
+const activityHistory = useActivityHistory()
+
+// Auto-guardado
+const autoSave = useAutoSave({
+  onSave: async (changes) => {
+    // Auto-guardar cambios pendientes
+    for (const change of changes) {
+      if (change.type === 'update' && change.animeId) {
+        await animeStore.updateAnime(change.animeId, change.data)
+      }
+    }
+  }
+})
+
+// Vista rápida
+const quickView = ref({
+  show: false,
+  anime: null,
+  x: 0,
+  y: 0
+})
+
 const savingAnime = ref(false)
 const savingConfig = ref(false)
 // Active tab se inicializa dinámicamente cuando hay estados disponibles
@@ -170,6 +252,7 @@ const activeTab = ref('')
 const searchQuery = ref('')
 const filters = ref({})
 const showStats = ref(false)
+const showHistory = ref(false)
 
 // Modo de vista
 const { viewMode, setViewMode } = useViewMode()
@@ -201,15 +284,20 @@ const hasGlobalSearch = computed(() => {
 const filteredAnimes = computed(() => {
   // Si hay búsqueda o filtros activos, buscar globalmente (en todas las secciones)
   const hasActiveSearch = searchQuery.value.trim().length > 0
-  const hasActiveFilters = filters.value.estado || filters.value.temporada || filters.value.sortBy
+  const hasActiveFilters = filters.value.estado || filters.value.temporada || filters.value.sortBy ||
+                          filters.value.año || filters.value.episodiosMin || filters.value.fechaDesde || filters.value.fechaHasta
   
   const filterOptions = {
     search: searchQuery.value,
     estado: hasActiveSearch || hasActiveFilters 
       ? filters.value.estado || undefined  // Si hay búsqueda/filtros, no forzar estado de sección
       : getStateBySection(activeTab.value),  // Si no hay búsqueda, usar estado de sección activa
-    temporadas: filters.value.temporada ? [filters.value.temporada] : undefined,
-    sortBy: filters.value.sortBy
+    temporada: filters.value.temporada || undefined,
+    sortBy: filters.value.sortBy,
+    año: filters.value.año || undefined,
+    episodiosMin: filters.value.episodiosMin || undefined,
+    fechaDesde: filters.value.fechaDesde || undefined,
+    fechaHasta: filters.value.fechaHasta || undefined
   }
   
   let result = animeStore.filteredAnimes(filterOptions)
@@ -258,42 +346,57 @@ const handleSubmitAnime = async (formData) => {
   savingAnime.value = true
   try {
     let imagenUrl = formData.imagen_url
+    const isEditing = !!animeModal.selectedItem.value?.id
+    const animeId = animeModal.selectedItem.value?.id
 
     // Solo subir imagen si el usuario seleccionó un archivo nuevo
-    // Si imagen_url es una URL externa (de la API), se guarda directamente sin subir
     if (formData.imageFile) {
-      const tempId = animeModal.selectedItem.value?.id || 'temp_' + Date.now()
+      const tempId = animeId || 'temp_' + Date.now()
       imagenUrl = await errorStore.handleError(
         () => animeStore.uploadImage(formData.imageFile, tempId),
         'Subir Imagen'
       )
     }
-    // Si imagen_url es una URL externa (de la API), se usa directamente
-    // Esto evita almacenamiento innecesario en Supabase
 
     const animeData = {
       nombre: formData.nombre,
-      nombre_base: formData.nombre_base || formData.nombre, // Si no hay nombre_base, usar nombre
+      nombre_base: formData.nombre_base || formData.nombre,
       estado: formData.estado,
       temporadas: formData.temporadas,
       imagen_url: imagenUrl,
       temporada_numero: formData.temporada_numero || null,
       tipo_temporada: formData.tipo_temporada || 'Temporada',
       fecha_estreno: formData.fecha_estreno || null,
-      // jikan_id se maneja por separado cuando se asocia desde la API
     }
 
-    if (animeModal.selectedItem.value?.id) {
+    if (isEditing) {
       await errorStore.handleError(
-        () => animeStore.updateAnime(animeModal.selectedItem.value.id, animeData),
+        () => animeStore.updateAnime(animeId, animeData),
         'Actualizar Anime'
       )
+      // Registrar en historial
+      activityHistory.addEntry(
+        `Anime actualizado: ${animeData.nombre}`,
+        { animeId, anime: animeData.nombre, details: 'Actualización de información' }
+      )
     } else {
-      await errorStore.handleError(
+      const newAnime = await errorStore.handleError(
         () => animeStore.createAnime(animeData),
         'Crear Anime'
       )
+      // Registrar en historial
+      activityHistory.addEntry(
+        `Anime creado: ${animeData.nombre}`,
+        { animeId: newAnime.id, anime: animeData.nombre, details: 'Nuevo anime agregado' }
+      )
     }
+
+    // Auto-guardar
+    autoSave.queueChange({
+      type: isEditing ? 'update' : 'create',
+      animeId: isEditing ? animeId : null,
+      data: animeData
+    })
 
     animeModal.close()
     await animeStore.fetchAnimes()
@@ -373,16 +476,6 @@ const handleDropAnime = async (anime, targetSectionId) => {
   }
 
   try {
-    if (import.meta.env.DEV) {
-      console.log('Moviendo anime:', {
-        id: anime.id,
-        nombre: anime.nombre,
-        estadoActual: currentEstado,
-        estadoNuevo: normalizedTargetEstado,
-        estadosValidos: animeStore.estados
-      })
-    }
-    
     // Actualizar el anime con el nuevo estado
     await errorStore.handleError(
       () => animeStore.updateAnime(anime.id, { estado: normalizedTargetEstado }),
@@ -390,16 +483,30 @@ const handleDropAnime = async (anime, targetSectionId) => {
       { anime: anime.nombre, estado: normalizedTargetEstado }
     )
     
+    // Registrar en historial
+    activityHistory.addEntry(
+      `Anime movido: ${anime.nombre}`,
+      { 
+        animeId: anime.id, 
+        anime: anime.nombre, 
+        details: `De "${currentEstado}" a "${normalizedTargetEstado}"` 
+      }
+    )
+    
+    // Auto-guardar
+    autoSave.queueChange({
+      type: 'update',
+      animeId: anime.id,
+      data: { estado: normalizedTargetEstado }
+    })
+    
     // Recargar los animes para reflejar el cambio
     await animeStore.fetchAnimes()
     
     // Mostrar popup de éxito
     successPopup.showSuccess(`"${anime.nombre}" movido a ${normalizedTargetEstado}`, 'Éxito')
   } catch (error) {
-    // El error ya fue manejado por handleError, pero agregamos más contexto
-    if (import.meta.env.DEV) {
-      console.error('Error completo moviendo anime:', error)
-    }
+    // El error ya fue manejado por handleError
   }
 }
 
@@ -420,6 +527,12 @@ const handleDeleteAnime = async (anime) => {
       () => animeStore.deleteAnime(anime.id),
       'Eliminar Anime',
       { anime: anime.nombre }
+    )
+    
+    // Registrar en historial
+    activityHistory.addEntry(
+      `Anime eliminado: ${anime.nombre}`,
+      { animeId: anime.id, anime: anime.nombre, details: 'Anime eliminado permanentemente' }
     )
     
     // Recargar animes después de eliminar
@@ -462,12 +575,7 @@ const handleAssociateJikan = async (anime) => {
 // Atajos de teclado
 useKeyboardShortcuts({
   'ctrl+k': () => {
-    // Abrir búsqueda rápida (por ahora solo enfocar el input de búsqueda)
-    const searchInput = document.querySelector('input[placeholder*="Buscar anime"]')
-    if (searchInput) {
-      searchInput.focus()
-      searchInput.select()
-    }
+    commandPalette.open()
   },
   'ctrl+n': () => {
     handleOpenAnimeModal()
@@ -477,8 +585,63 @@ useKeyboardShortcuts({
   },
   'ctrl+/': () => {
     showStats.value = !showStats.value
+  },
+  'ctrl+h': () => {
+    showHistory.value = !showHistory.value
+  },
+  'escape': () => {
+    if (commandPalette.isOpen.value) {
+      commandPalette.close()
+    }
+    if (showHistory.value) {
+      showHistory.value = false
+    }
   }
 })
+
+// Manejar comandos del Command Palette
+const handleCommand = (action) => {
+  switch (action) {
+    case 'search':
+      const searchInput = document.querySelector('input[placeholder*="Buscar anime"]')
+      if (searchInput) {
+        searchInput.focus()
+        searchInput.select()
+      }
+      break
+    case 'new-anime':
+      handleOpenAnimeModal()
+      break
+    case 'calendar':
+      router.push('/calendar')
+      break
+    case 'stats':
+      showStats.value = !showStats.value
+      break
+    case 'config':
+      configModal.open()
+      break
+    case 'history':
+      showHistory.value = true
+      break
+  }
+}
+
+// Manejar vista rápida (hover)
+const handleAnimeHover = (event, anime) => {
+  quickView.value = {
+    show: true,
+    anime,
+    x: event.clientX,
+    y: event.clientY
+  }
+}
+
+const handleAnimeLeave = () => {
+  setTimeout(() => {
+    quickView.value.show = false
+  }, 200)
+}
 
 // Limpiar búsqueda cuando cambia de tab
 watch(activeTab, () => {

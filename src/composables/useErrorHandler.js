@@ -51,15 +51,33 @@ export function useErrorHandler() {
 
   /**
    * Manejar error de forma segura (try-catch wrapper)
+   * @param {Function} fn - Función async a ejecutar
+   * @param {string} context - Contexto donde ocurre la operación
+   * @param {string|Object} errorMessageOrDetails - Mensaje de error personalizado o objeto con detalles
+   * @param {Object} details - Detalles adicionales (opcional, solo si errorMessageOrDetails es string)
    */
-  const handleError = async (fn, context = 'Operación', errorMessage = null) => {
+  const handleError = async (fn, context = 'Operación', errorMessageOrDetails = null, details = null) => {
     try {
       return await fn()
     } catch (error) {
+      let errorMessage = null
+      let errorDetails = { originalError: error }
+      
+      // Si el tercer parámetro es un objeto, tratarlo como detalles
+      if (errorMessageOrDetails && typeof errorMessageOrDetails === 'object' && !(errorMessageOrDetails instanceof Error)) {
+        errorDetails = { ...errorMessageOrDetails, originalError: error }
+      } else if (errorMessageOrDetails) {
+        // Si es string, es el mensaje de error
+        errorMessage = errorMessageOrDetails
+        if (details && typeof details === 'object') {
+          errorDetails = { ...details, originalError: error }
+        }
+      }
+      
       addError(
         errorMessage || error,
         context,
-        { originalError: error }
+        errorDetails
       )
       throw error // Re-lanzar para que el caller pueda manejarlo si es necesario
     }

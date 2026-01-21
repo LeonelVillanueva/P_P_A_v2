@@ -1,5 +1,5 @@
 import { supabase } from '../config/supabase'
-import { validateId, validateAnimeName, validateImageUrl, validateEstado, validateTemporadas, validateAnimeData } from '../utils/validators'
+import { validateId, validateAnimeName, validateImageUrl, validateEstado, validateTemporadas, validateAnimeData, sanitizeString } from '../utils/validators'
 
 /**
  * Servicio para operaciones CRUD de animes
@@ -156,6 +156,90 @@ export const animeService = {
         errors.push(temporadasValidation.error)
       } else {
         validatedUpdates.temporadas = temporadasValidation.value
+      }
+    }
+    
+    // Validar nombre_base si está presente
+    if (updates.nombre_base !== undefined) {
+      validatedUpdates.nombre_base = updates.nombre_base ? sanitizeString(updates.nombre_base).slice(0, 200) : null
+    }
+    
+    // Validar temporada_numero si está presente
+    if (updates.temporada_numero !== undefined && updates.temporada_numero !== null) {
+      const num = parseInt(updates.temporada_numero)
+      if (!isNaN(num) && num > 0) {
+        validatedUpdates.temporada_numero = num
+      } else {
+        validatedUpdates.temporada_numero = null
+      }
+    }
+    
+    // Validar tipo_temporada si está presente
+    if (updates.tipo_temporada !== undefined) {
+      const tiposValidos = ['Temporada', 'Movie', 'OVA', 'Spin off']
+      const tipo = sanitizeString(updates.tipo_temporada)
+      validatedUpdates.tipo_temporada = tiposValidos.includes(tipo) ? tipo : 'Temporada'
+    }
+    
+    // Validar fecha_estreno si está presente
+    if (updates.fecha_estreno !== undefined) {
+      if (updates.fecha_estreno === null || updates.fecha_estreno === '') {
+        validatedUpdates.fecha_estreno = null
+      } else {
+        // Validar formato de fecha (YYYY-MM-DD)
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/
+        if (dateRegex.test(updates.fecha_estreno)) {
+          // Validar que sea una fecha válida
+          const date = new Date(updates.fecha_estreno)
+          if (!isNaN(date.getTime())) {
+            validatedUpdates.fecha_estreno = updates.fecha_estreno
+          } else {
+            errors.push('Fecha de estreno inválida')
+          }
+        } else {
+          errors.push('Formato de fecha inválido. Use YYYY-MM-DD')
+        }
+      }
+    }
+    
+    // Validar jikan_id si está presente
+    if (updates.jikan_id !== undefined && updates.jikan_id !== null) {
+      const id = parseInt(updates.jikan_id)
+      if (!isNaN(id) && id > 0) {
+        validatedUpdates.jikan_id = id
+      } else {
+        validatedUpdates.jikan_id = null
+      }
+    }
+    
+    // Validar otros campos opcionales si están presentes
+    if (updates.sinopsis !== undefined) {
+      validatedUpdates.sinopsis = updates.sinopsis ? sanitizeString(updates.sinopsis).slice(0, 5000) : null
+    }
+    
+    if (updates.generos !== undefined) {
+      if (Array.isArray(updates.generos)) {
+        validatedUpdates.generos = updates.generos.slice(0, 20).map(g => sanitizeString(String(g)).slice(0, 50))
+      } else {
+        validatedUpdates.generos = null
+      }
+    }
+    
+    if (updates.episodios !== undefined && updates.episodios !== null) {
+      const num = parseInt(updates.episodios)
+      if (!isNaN(num) && num >= 0) {
+        validatedUpdates.episodios = num
+      } else {
+        validatedUpdates.episodios = null
+      }
+    }
+    
+    if (updates.año !== undefined && updates.año !== null) {
+      const num = parseInt(updates.año)
+      if (!isNaN(num) && num >= 1900 && num <= 2100) {
+        validatedUpdates.año = num
+      } else {
+        validatedUpdates.año = null
       }
     }
     

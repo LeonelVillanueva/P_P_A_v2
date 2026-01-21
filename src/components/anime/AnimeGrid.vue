@@ -40,6 +40,8 @@
           @open="$emit('open-anime', anime)"
           @edit="$emit('edit', anime)"
           @delete="$emit('delete', anime)"
+          @hover="$emit('hover', $event, anime)"
+          @leave="$emit('leave')"
           @drag-start="handleDragStart"
           @drag-end="handleDragEnd"
         />
@@ -55,6 +57,8 @@
           @open="$emit('open-anime', anime)"
           @edit="$emit('edit', anime)"
           @delete="$emit('delete', anime)"
+          @hover="$emit('hover', $event, anime)"
+          @leave="$emit('leave')"
           @drag-start="handleDragStart"
           @drag-end="handleDragEnd"
         />

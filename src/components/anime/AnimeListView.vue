@@ -6,13 +6,26 @@
       :draggable="draggable"
       @dragstart="handleDragStart($event, anime)"
       @dragend="handleDragEnd"
-      class="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200 p-4"
+      @contextmenu.prevent="handleContextMenu(anime)"
+      class="bg-white rounded-lg shadow-sm p-4 transition-all duration-200 relative"
       :class="{ 
         'opacity-50 cursor-move': isDragging, 
-        'cursor-pointer': !isDragging 
+        'cursor-pointer': !isDragging,
+        'border-[5px] border-black shadow-2xl ring-[6px] ring-black/30 z-10': isSelected(anime.id),
+        'border border-gray-200 hover:shadow-md': !isSelected(anime.id)
       }"
       @click="!isDragging && $emit('open', anime)"
     >
+      <!-- Indicador de selección -->
+      <div v-if="isSelected(anime.id)" class="absolute top-2 right-2 z-20">
+        <span class="px-2 py-1 bg-black text-white text-xs font-bold rounded-lg shadow-lg animate-pulse flex items-center space-x-1">
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
+          <span>Seleccionado</span>
+        </span>
+      </div>
+      
       <div class="flex items-center justify-between">
         <div class="flex-1 min-w-0">
           <h3 class="font-semibold text-gray-800 text-base mb-1 truncate">
@@ -69,6 +82,7 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useAnimeStore } from '../../stores/animeStore'
 import { formatDate } from '../../utils/formatters'
 
 const props = defineProps({
@@ -88,7 +102,20 @@ const props = defineProps({
 
 const emit = defineEmits(['open', 'edit', 'delete', 'drag-start', 'drag-end'])
 
+const animeStore = useAnimeStore()
 const isDragging = ref(false)
+
+const isSelected = (animeId) => {
+  return animeStore.isAnimeSelected(animeId)
+}
+
+const handleContextMenu = (anime) => {
+  if (isSelected(anime.id)) {
+    animeStore.clearDraggedAnime()
+  } else {
+    animeStore.setDraggedAnime(anime)
+  }
+}
 
 const handleDragStart = (event, anime) => {
   if (!props.draggable) return

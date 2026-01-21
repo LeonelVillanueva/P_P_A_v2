@@ -10,7 +10,9 @@ export const useAnimeStore = defineStore('anime', {
     estados: [],
     temporadas: [],
     loading: false,
-    error: null
+    error: null,
+    // Anime que se está arrastrando (para drag & drop entre vistas)
+    draggedAnime: null
   }),
 
   getters: {
@@ -28,7 +30,9 @@ export const useAnimeStore = defineStore('anime', {
       if (filters.search && filters.search.trim()) {
         const searchLower = filters.search.toLowerCase().trim()
         filtered = filtered.filter(anime => 
-          anime.nombre.toLowerCase().includes(searchLower)
+          anime.nombre.toLowerCase().includes(searchLower) ||
+          anime.nombre_base?.toLowerCase().includes(searchLower) ||
+          anime.sinopsis?.toLowerCase().includes(searchLower)
         )
       }
       
@@ -38,10 +42,44 @@ export const useAnimeStore = defineStore('anime', {
       }
       
       // Filtro por temporadas
-      if (filters.temporadas && filters.temporadas.length > 0) {
+      if (filters.temporada) {
         filtered = filtered.filter(anime => 
-          filters.temporadas.some(temp => anime.temporadas?.includes(temp))
+          anime.temporadas?.includes(filters.temporada)
         )
+      }
+      
+      // Filtro por año
+      if (filters.año) {
+        filtered = filtered.filter(anime => {
+          if (anime.año) return anime.año === filters.año
+          if (anime.fecha_estreno) {
+            return new Date(anime.fecha_estreno).getFullYear() === filters.año
+          }
+          return false
+        })
+      }
+      
+      // Filtro por episodios mínimo
+      if (filters.episodiosMin) {
+        filtered = filtered.filter(anime => 
+          anime.episodios && anime.episodios >= filters.episodiosMin
+        )
+      }
+      
+      // Filtro por fecha de estreno desde
+      if (filters.fechaDesde) {
+        filtered = filtered.filter(anime => {
+          if (!anime.fecha_estreno) return false
+          return new Date(anime.fecha_estreno) >= new Date(filters.fechaDesde)
+        })
+      }
+      
+      // Filtro por fecha de estreno hasta
+      if (filters.fechaHasta) {
+        filtered = filtered.filter(anime => {
+          if (!anime.fecha_estreno) return false
+          return new Date(anime.fecha_estreno) <= new Date(filters.fechaHasta)
+        })
       }
       
       // Ordenamiento
@@ -64,6 +102,20 @@ export const useAnimeStore = defineStore('anime', {
             break
           case 'actualizado-desc':
             filtered.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))
+            break
+          case 'fecha-estreno-asc':
+            filtered.sort((a, b) => {
+              const dateA = a.fecha_estreno ? new Date(a.fecha_estreno) : new Date(0)
+              const dateB = b.fecha_estreno ? new Date(b.fecha_estreno) : new Date(0)
+              return dateA - dateB
+            })
+            break
+          case 'fecha-estreno-desc':
+            filtered.sort((a, b) => {
+              const dateA = a.fecha_estreno ? new Date(a.fecha_estreno) : new Date(0)
+              const dateB = b.fecha_estreno ? new Date(b.fecha_estreno) : new Date(0)
+              return dateB - dateA
+            })
             break
         }
       }
@@ -246,6 +298,57 @@ export const useAnimeStore = defineStore('anime', {
         this.error = error.message
         throw error
       }
+    },
+
+    /**
+     * Guardar anime que se está arrastrando (para drag & drop entre vistas)
+     */
+    setDraggedAnime(anime) {
+      this.draggedAnime = anime
+      // Guardar también en localStorage como respaldo
+      if (anime) {
+        localStorage.setItem('draggedAnime', JSON.stringify(anime))
+      } else {
+        localStorage.removeItem('draggedAnime')
+      }
+    },
+
+    /**
+     * Obtener anime que se está arrastrando
+     */
+    getDraggedAnime() {
+      // Primero intentar desde el store
+      if (this.draggedAnime) {
+        return this.draggedAnime
+      }
+      // Si no hay en el store, intentar desde localStorage
+      try {
+        const stored = localStorage.getItem('draggedAnime')
+        if (stored) {
+          const anime = JSON.parse(stored)
+          this.draggedAnime = anime
+          return anime
+        }
+      } catch (error) {
+        console.error('Error al leer draggedAnime de localStorage:', error)
+      }
+      return null
+    },
+
+    /**
+     * Limpiar anime arrastrado
+     */
+    clearDraggedAnime() {
+      this.draggedAnime = null
+      localStorage.removeItem('draggedAnime')
+    },
+
+    /**
+     * Verificar si un anime está seleccionado (para calendario)
+     */
+    isAnimeSelected(animeId) {
+      if (!this.draggedAnime) return false
+      return this.draggedAnime.id === animeId
     }
   }
 })

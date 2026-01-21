@@ -88,6 +88,7 @@
             <div
               v-for="temporada in serie.temporadas"
               :key="temporada.id"
+              @contextmenu.prevent="handleContextMenu(temporada)"
               class="bg-white rounded-lg p-3 border border-gray-200 hover:border-purple-300 transition-colors"
             >
               <div class="flex items-center justify-between">
@@ -163,6 +164,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useAnimeStore } from '../../stores/animeStore'
 import { formatDate, formatDateTime, formatRelativeTime } from '../../utils/formatters'
 
 const props = defineProps({
@@ -175,7 +177,17 @@ const props = defineProps({
 
 const emit = defineEmits(['edit', 'delete', 'update-from-api', 'associate-jikan'])
 
+const animeStore = useAnimeStore()
 const expandedSeries = ref(new Set())
+
+const handleContextMenu = (temporada) => {
+  const isSelected = animeStore.isAnimeSelected(temporada.id)
+  if (isSelected) {
+    animeStore.clearDraggedAnime()
+  } else {
+    animeStore.setDraggedAnime(temporada)
+  }
+}
 
 const toggleSerie = (nombreBase) => {
   if (expandedSeries.value.has(nombreBase)) {
