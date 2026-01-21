@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { animeService } from '../services/animeService'
 import { configService } from '../services/configService'
 import { storageService } from '../services/storageService'
+import { animeUpdateService } from '../services/animeUpdateService'
 
 export const useAnimeStore = defineStore('anime', {
   state: () => ({
@@ -190,6 +191,57 @@ export const useAnimeStore = defineStore('anime', {
     async uploadImage(file, animeId) {
       try {
         return await storageService.uploadImage(file, animeId)
+      } catch (error) {
+        this.error = error.message
+        throw error
+      }
+    },
+
+    /**
+     * Actualizar información de un anime desde Jikan API
+     */
+    async updateAnimeFromJikan(animeId, jikanId) {
+      try {
+        const updated = await animeUpdateService.updateAnimeFromJikan(animeId, jikanId)
+        // Actualizar en el store
+        const index = this.animes.findIndex(a => a.id === animeId)
+        if (index !== -1) {
+          this.animes[index] = updated
+        }
+        return updated
+      } catch (error) {
+        this.error = error.message
+        throw error
+      }
+    },
+
+    /**
+     * Asociar Jikan ID a un anime y actualizar información
+     */
+    async associateJikanId(animeId, searchQuery) {
+      try {
+        const updated = await animeUpdateService.associateJikanId(animeId, searchQuery)
+        // Actualizar en el store
+        const index = this.animes.findIndex(a => a.id === animeId)
+        if (index !== -1) {
+          this.animes[index] = updated
+        }
+        return updated
+      } catch (error) {
+        this.error = error.message
+        throw error
+      }
+    },
+
+    /**
+     * Actualizar todos los animes que necesitan actualización
+     */
+    async updateAllAnimes(daysSinceLastCheck = 7) {
+      try {
+        const results = await animeUpdateService.updateAllAnimes(daysSinceLastCheck)
+        // Recargar animes después de actualización
+        await this.fetchAnimes()
+        return results
       } catch (error) {
         this.error = error.message
         throw error

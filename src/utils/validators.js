@@ -187,6 +187,39 @@ export function validateAnimeData(animeData, estadosValidos = []) {
     validated.temporadas = temporadasValidation.value
   }
   
+  // Campos opcionales (no requieren validación estricta, solo sanitización si existen)
+  if (animeData.nombre_base !== undefined) {
+    validated.nombre_base = animeData.nombre_base ? sanitizeString(animeData.nombre_base).slice(0, 200) : null
+  }
+  
+  if (animeData.temporada_numero !== undefined && animeData.temporada_numero !== null) {
+    const num = parseInt(animeData.temporada_numero)
+    if (!isNaN(num) && num > 0) {
+      validated.temporada_numero = num
+    }
+  }
+  
+  if (animeData.tipo_temporada !== undefined) {
+    const tiposValidos = ['Temporada', 'Movie', 'OVA', 'Spin off']
+    const tipo = sanitizeString(animeData.tipo_temporada)
+    validated.tipo_temporada = tiposValidos.includes(tipo) ? tipo : 'Temporada'
+  }
+  
+  if (animeData.fecha_estreno !== undefined && animeData.fecha_estreno) {
+    // Validar formato de fecha (YYYY-MM-DD)
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/
+    if (dateRegex.test(animeData.fecha_estreno)) {
+      validated.fecha_estreno = animeData.fecha_estreno
+    }
+  }
+  
+  if (animeData.jikan_id !== undefined && animeData.jikan_id !== null) {
+    const id = parseInt(animeData.jikan_id)
+    if (!isNaN(id) && id > 0) {
+      validated.jikan_id = id
+    }
+  }
+  
   if (errors.length > 0) {
     return {
       valid: false,

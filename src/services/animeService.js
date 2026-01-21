@@ -14,6 +14,8 @@ export const animeService = {
       const { data, error } = await supabase
         .from('animes')
         .select('*')
+        .order('nombre_base', { ascending: true })
+        .order('temporada_numero', { ascending: true, nullsLast: true })
         .order('created_at', { ascending: false })
         .limit(1000) // Limitar resultados para prevenir ataques
       
@@ -35,6 +37,49 @@ export const animeService = {
         throw new Error('El dominio de Supabase no se puede resolver. Verifica que la URL (VITE_SUPABASE_URL) sea correcta y que el proyecto no haya sido pausado o eliminado en Supabase.')
       }
       // Re-lanzar otros errores
+      throw error
+    }
+  },
+
+  /**
+   * Obtener animes agrupados por serie (nombre_base)
+   */
+  async getGroupedBySeries() {
+    try {
+      const animes = await this.getAll()
+      
+      // Agrupar por nombre_base
+      const grouped = {}
+      animes.forEach(anime => {
+        const key = anime.nombre_base || anime.nombre
+        if (!grouped[key]) {
+          grouped[key] = {
+            nombre_base: key,
+            imagen_url: anime.imagen_url,
+            temporadas: [],
+            estados: new Set(),
+            jikan_id: anime.jikan_id
+          }
+        }
+        grouped[key].temporadas.push(anime)
+        if (anime.estado) {
+          grouped[key].estados.add(anime.estado)
+        }
+      })
+      
+      // Convertir Set a Array
+      Object.keys(grouped).forEach(key => {
+        grouped[key].estados = Array.from(grouped[key].estados)
+        // Ordenar temporadas por número
+        grouped[key].temporadas.sort((a, b) => {
+          const numA = a.temporada_numero || 0
+          const numB = b.temporada_numero || 0
+          return numA - numB
+        })
+      })
+      
+      return Object.values(grouped)
+    } catch (error) {
       throw error
     }
   },

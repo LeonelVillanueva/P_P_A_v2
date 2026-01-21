@@ -47,7 +47,17 @@
                 @add-anime="handleOpenAnimeModal"
               />
 
-              <!-- Animes Grid -->
+              <!-- Vista de Series Agrupadas (nuevo modo por defecto) -->
+              <AnimeSeriesView
+                v-if="viewMode === 'series'"
+                :series="filteredSeries"
+                @edit="animeModal.open"
+                @delete="handleDeleteAnime"
+                @update-from-api="handleUpdateFromApi"
+                @associate-jikan="handleAssociateJikan"
+              />
+
+              <!-- Animes Grid (vista tradicional) -->
               <AnimeGrid
                 v-else
                 :animes="filteredAnimes"
@@ -126,6 +136,7 @@ import { useAnimeStore } from '../stores/animeStore'
 import { useErrorStore } from '../stores/errorStore'
 import { useModal } from '../composables/useModal'
 import { useAnimeSections } from '../composables/useAnimeSections'
+import { useAnimeSeries } from '../composables/useAnimeSeries'
 import { useViewMode } from '../composables/useViewMode'
 import { useConfirmDialog } from '../composables/useConfirmDialog'
 import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts'
@@ -133,6 +144,7 @@ import { useSuccessPopup } from '../composables/useSuccessPopup'
 import AppHeader from '../components/layout/AppHeader.vue'
 import AnimeTabs from '../components/anime/AnimeTabs.vue'
 import AnimeGrid from '../components/anime/AnimeGrid.vue'
+import AnimeSeriesView from '../components/anime/AnimeSeriesView.vue'
 import AnimeLoadingState from '../components/anime/AnimeLoadingState.vue'
 import AnimeEmptyState from '../components/anime/AnimeEmptyState.vue'
 import AnimeModal from '../components/anime/AnimeModal.vue'
@@ -170,6 +182,13 @@ const {
   getStateBySection
 } = useAnimeSections(animeStore)
 
+// Sistema de series agrupadas
+const {
+  seriesAgrupadas,
+  filterSeriesByEstado,
+  searchSeries
+} = useAnimeSeries(animeStore)
+
 // Verificar si hay búsqueda global activa
 const hasGlobalSearch = computed(() => {
   return searchQuery.value.trim().length > 0 || 
@@ -178,7 +197,7 @@ const hasGlobalSearch = computed(() => {
          filters.value.sortBy
 })
 
-// Animes filtrados
+// Animes filtrados (para vista tradicional)
 const filteredAnimes = computed(() => {
   // Si hay búsqueda o filtros activos, buscar globalmente (en todas las secciones)
   const hasActiveSearch = searchQuery.value.trim().length > 0
@@ -206,6 +225,35 @@ const filteredAnimes = computed(() => {
   return result
 })
 
+// Series filtradas (para vista de series agrupadas)
+const filteredSeries = computed(() => {
+  let series = seriesAgrupadas.value
+
+  // Filtrar por estado si hay búsqueda/filtros activos
+  const hasActiveSearch = searchQuery.value.trim().length > 0
+  const hasActiveFilters = filters.value.estado || filters.value.temporada || filters.value.sortBy
+
+  if (hasActiveSearch || hasActiveFilters) {
+    // Si hay búsqueda, buscar en series
+    if (hasActiveSearch) {
+      series = searchSeries(searchQuery.value)
+    }
+
+    // Filtrar por estado
+    if (filters.value.estado) {
+      series = filterSeriesByEstado(filters.value.estado)
+    }
+  } else {
+    // Si no hay búsqueda/filtros, filtrar por estado de la sección activa
+    const estadoSeccion = getStateBySection(activeTab.value)
+    if (estadoSeccion) {
+      series = filterSeriesByEstado(estadoSeccion)
+    }
+  }
+
+  return series
+})
+
 const handleSubmitAnime = async (formData) => {
   savingAnime.value = true
   try {
@@ -225,9 +273,14 @@ const handleSubmitAnime = async (formData) => {
 
     const animeData = {
       nombre: formData.nombre,
+      nombre_base: formData.nombre_base || formData.nombre, // Si no hay nombre_base, usar nombre
       estado: formData.estado,
       temporadas: formData.temporadas,
-      imagen_url: imagenUrl
+      imagen_url: imagenUrl,
+      temporada_numero: formData.temporada_numero || null,
+      tipo_temporada: formData.tipo_temporada || 'Temporada',
+      fecha_estreno: formData.fecha_estreno || null,
+      // jikan_id se maneja por separado cuando se asocia desde la API
     }
 
     if (animeModal.selectedItem.value?.id) {
@@ -377,6 +430,33 @@ const handleDeleteAnime = async (anime) => {
   } catch (error) {
     // El error ya fue manejado por handleError
   }
+}
+
+const handleUpdateFromApi = async (anime) => {
+  if (!anime.jikan_id) {
+    errorStore.addError('Este anime no tiene asociado un ID de Jikan API', 'Error')
+    return
+  }
+
+  try {
+    await errorStore.handleError(
+      () => animeStore.updateAnimeFromJikan(anime.id, anime.jikan_id),
+      'Actualizar desde API',
+      { anime: anime.nombre }
+    )
+    
+    await animeStore.fetchAnimes()
+    successPopup.showSuccess(`"${anime.nombre}" actualizado desde la API`, 'Éxito')
+  } catch (error) {
+    // Error ya manejado
+  }
+}
+
+const handleAssociateJikan = async (anime) => {
+  // Abrir modal de búsqueda para asociar Jikan ID
+  searchModal.open()
+  // Guardar referencia al anime que se está asociando
+  animeModal.open(anime)
 }
 
 // Atajos de teclado

@@ -104,6 +104,75 @@
             />
           </div>
 
+          <!-- Nombre Base (Serie) -->
+          <div class="bg-white rounded-xl p-5 border border-gray-200">
+            <label class="block text-sm font-semibold text-gray-700 mb-3 flex items-center space-x-2">
+              <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+              </svg>
+              <span>Nombre Base de la Serie</span>
+            </label>
+            <input 
+              v-model="formData.nombre_base"
+              type="text"
+              class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all outline-none"
+              placeholder="Ej: The Rising of the Shield Hero (para agrupar temporadas)"
+            />
+            <p class="text-xs text-gray-500 mt-2">Deja vacío para usar el nombre del anime. Usa el mismo nombre base para agrupar temporadas de la misma serie.</p>
+          </div>
+
+          <!-- Tipo y Número de Temporada -->
+          <div class="bg-white rounded-xl p-5 border border-gray-200 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-3 flex items-center space-x-2">
+                <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
+                </svg>
+                <span>Tipo</span>
+              </label>
+              <select 
+                v-model="formData.tipo_temporada"
+                class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all outline-none bg-white"
+              >
+                <option value="Temporada">Temporada</option>
+                <option value="Movie">Movie</option>
+                <option value="OVA">OVA</option>
+                <option value="Spin off">Spin off</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-3 flex items-center space-x-2">
+                <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
+                </svg>
+                <span>Número de Temporada</span>
+              </label>
+              <input 
+                v-model.number="formData.temporada_numero"
+                type="number"
+                min="1"
+                class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all outline-none"
+                placeholder="1, 2, 3..."
+              />
+            </div>
+          </div>
+
+          <!-- Fecha de Estreno -->
+          <div class="bg-white rounded-xl p-5 border border-gray-200">
+            <label class="block text-sm font-semibold text-gray-700 mb-3 flex items-center space-x-2">
+              <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <span>Fecha de Estreno</span>
+            </label>
+            <input 
+              v-model="formData.fecha_estreno"
+              type="date"
+              class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all outline-none"
+            />
+            <p class="text-xs text-gray-500 mt-2">Si el anime aún no ha salido, esta fecha se usará para verificar cuando esté disponible.</p>
+          </div>
+
           <!-- Estado -->
           <div class="bg-white rounded-xl p-5 border border-gray-200">
             <label class="block text-sm font-semibold text-gray-700 mb-3 flex items-center space-x-2">

@@ -6,9 +6,14 @@ import { ref, computed } from 'vue'
 export function useAnimeForm(initialAnime = null) {
   const formData = ref({
     nombre: '',
+    nombre_base: '', // Nombre base de la serie (para agrupar temporadas)
     estado: '',
     temporadas: [],
-    imagen_url: null
+    imagen_url: null,
+    temporada_numero: null, // Número de temporada (1, 2, 3, etc.)
+    tipo_temporada: 'Temporada', // Tipo: Temporada, Movie, OVA, Spin off
+    fecha_estreno: null, // Fecha de estreno
+    jikan_id: null // ID de Jikan API para actualizaciones automáticas
   })
 
   const previewImage = ref(null)
@@ -24,9 +29,14 @@ export function useAnimeForm(initialAnime = null) {
     if (anime) {
       formData.value = {
         nombre: anime.nombre || '',
+        nombre_base: anime.nombre_base || anime.nombre || '', // Si no hay nombre_base, usar nombre
         estado: anime.estado || '',
         temporadas: [...(anime.temporadas || [])],
-        imagen_url: anime.imagen_url || null
+        imagen_url: anime.imagen_url || null,
+        temporada_numero: anime.temporada_numero || null,
+        tipo_temporada: anime.tipo_temporada || 'Temporada',
+        fecha_estreno: anime.fecha_estreno || null,
+        jikan_id: anime.jikan_id || null
       }
       
       // Si hay imagen_url pero no es un archivo local, mantenerla para mostrar
@@ -37,9 +47,14 @@ export function useAnimeForm(initialAnime = null) {
     } else {
       formData.value = {
         nombre: '',
+        nombre_base: '',
         estado: '',
         temporadas: [],
-        imagen_url: null
+        imagen_url: null,
+        temporada_numero: null,
+        tipo_temporada: 'Temporada',
+        fecha_estreno: null,
+        jikan_id: null
       }
       previewImage.value = null
     }
