@@ -62,10 +62,9 @@ const errorStore = useErrorStore()
 const authStore = useAuthStore()
 const hasCheckedOnce = ref(false)
 
-// Activar sistema de keep-alive para evitar que Supabase se pause por inactividad
-// Los pings se ejecutan cada 5 minutos automáticamente
+// Keep-alive cliente: pings frecuentes mientras la app está abierta
 useSupabaseKeepAlive({
-  interval: 5 * 60 * 1000, // 5 minutos
+  interval: 2 * 60 * 1000, // 2 minutos (además del cron en Vercel)
   enabled: true
 })
 

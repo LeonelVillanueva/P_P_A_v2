@@ -3,17 +3,18 @@ import { supabase, isSupabaseConfigured } from '../config/supabase'
 
 /**
  * Composable para mantener Supabase activo mediante pings periódicos
- * Evita que el proyecto se pause por inactividad
+ * (no sustituye el cron en Vercel: la app debe estar abierta para que esto corra)
  */
 export function useSupabaseKeepAlive(options = {}) {
   const {
-    interval = 5 * 60 * 1000, // 5 minutos por defecto
+    interval = 2 * 60 * 1000, // 2 minutos por defecto
     enabled = true,
     onError = null
   } = options
 
   let pingInterval = null
   let isActive = false
+  let visibilityHandler = null
 
   /**
    * Realiza un ping ligero a Supabase para mantener el proyecto activo
@@ -93,6 +94,15 @@ export function useSupabaseKeepAlive(options = {}) {
       performPing()
     }, interval)
 
+    // Ping al volver a la pestaña (evita largos huecos con la app abierta en segundo plano)
+    visibilityHandler = () => {
+      if (document.visibilityState === 'visible') {
+        performPing()
+      }
+    }
+    document.addEventListener('visibilitychange', visibilityHandler)
+    window.addEventListener('focus', visibilityHandler)
+
     if (import.meta.env.DEV) {
       console.log(`[KeepAlive] Sistema activado - pings cada ${interval / 1000 / 60} minutos`)
     }
@@ -105,6 +115,11 @@ export function useSupabaseKeepAlive(options = {}) {
     if (pingInterval) {
       clearInterval(pingInterval)
       pingInterval = null
+    }
+    if (visibilityHandler) {
+      document.removeEventListener('visibilitychange', visibilityHandler)
+      window.removeEventListener('focus', visibilityHandler)
+      visibilityHandler = null
     }
     isActive = false
 
