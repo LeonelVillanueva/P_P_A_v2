@@ -1,65 +1,71 @@
 <template>
-  <!-- Tabs Móvil (diseño diferente - selector dropdown) -->
-  <div class="sm:hidden bg-elevated rounded-card shadow-card border border-border-subtle overflow-hidden mb-3">
-    <!-- Selector móvil -->
-    <div class="p-2.5 border-b border-border-subtle bg-surface-muted">
-      <div class="flex items-center space-x-2 mb-2">
-        <label for="mobile-tab-selector" class="sr-only">Seleccionar sección de animes</label>
-        <select
-          id="mobile-tab-selector"
-          :value="activeTab"
-          class="flex-1 px-4 py-3 bg-elevated border-2 border-accent-border rounded-card font-semibold text-accent focus:outline-none focus:ring-2 focus:ring-accent-ring focus:border-accent appearance-none pr-10"
-          aria-label="Seleccionar sección de animes"
-          @change="handleTabClick($event.target.value)"
-          @keydown="handleMobileKeydown"
+  <!-- Tabs Móvil -->
+  <div
+    class="sm:hidden mb-3 overflow-hidden rounded-2xl border border-border-subtle bg-elevated shadow-card-lg ring-1 ring-black/[0.04]"
+  >
+    <div
+      class="h-1 w-full bg-gradient-to-r from-accent via-accent-hover to-cyan-500/70"
+      aria-hidden="true"
+    />
+    <div class="space-y-4 p-4 sm:p-5">
+      <div>
+        <label
+          for="mobile-tab-selector"
+          class="mb-2 block text-[11px] font-semibold uppercase tracking-wide text-ink-muted"
         >
-          <option v-for="seccion in sections" :key="seccion.id" :value="seccion.id">
-            {{ seccion.nombre }} ({{ getCount(seccion.id) }})
-          </option>
-        </select>
-        <div class="relative pointer-events-none -ml-8">
-          <svg class="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-          </svg>
+          Sección
+        </label>
+        <div class="relative">
+          <select
+            id="mobile-tab-selector"
+            :value="activeTab"
+            class="w-full cursor-pointer appearance-none rounded-xl border-2 border-border-subtle bg-surface-muted/80 py-3 pl-4 pr-11 text-sm font-semibold text-ink shadow-inner transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-ring"
+            aria-label="Seleccionar sección de animes"
+            @change="handleTabClick($event.target.value)"
+            @keydown="handleMobileKeydown"
+          >
+            <option v-for="seccion in sections" :key="seccion.id" :value="seccion.id">
+              {{ seccion.nombre }} ({{ getCount(seccion.id) }})
+            </option>
+          </select>
+          <div class="pointer-events-none absolute inset-y-0 right-3 flex items-center">
+            <svg class="h-5 w-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
         </div>
       </div>
-      
-      <!-- Selector de vista móvil -->
-      <div class="flex items-center justify-end space-x-1 bg-surface-muted rounded-lg p-1">
-        <button
-          v-for="view in viewModes"
-          :key="view.id"
-          :class="[
-            'p-2 rounded transition-colors focus:outline-none focus:ring-2 focus:ring-accent-ring',
-            viewMode === view.id
-              ? 'bg-elevated text-accent shadow-sm'
-              : 'text-ink-muted hover:text-ink'
-          ]"
-          :aria-label="`Cambiar a vista ${view.label}`"
-          :title="view.label"
-          @click="$emit('change-view', view.id)"
-        >
-          <svg v-if="view.id === 'cards'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-          </svg>
-          <svg v-else-if="view.id === 'series'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-          </svg>
-          <svg v-else-if="view.id === 'list-image'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4l4 4-4 4" />
-          </svg>
-          <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </button>
+
+      <div
+        class="flex justify-center"
+        role="toolbar"
+        aria-label="Tipo de vista"
+      >
+        <div class="inline-flex items-center gap-px rounded-lg border border-border-subtle/70 bg-surface-muted/40 p-0.5">
+          <button
+            v-for="view in viewModes"
+            :key="view.id"
+            type="button"
+            :class="[
+              'flex h-10 w-10 items-center justify-center rounded-md transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring focus-visible:ring-offset-1',
+              viewMode === view.id
+                ? 'bg-elevated text-accent shadow-sm'
+                : 'text-ink-subtle hover:bg-elevated/80 hover:text-ink'
+            ]"
+            :aria-label="`Cambiar a vista ${view.label}`"
+            :title="view.label"
+            @click="$emit('change-view', view.id)"
+          >
+            <AnimeTabsViewIcon :mode="view.id" icon-class="h-[1.15rem] w-[1.15rem]" />
+          </button>
+        </div>
       </div>
     </div>
 
     <!-- Tab Content Móvil -->
-    <div 
+    <div
       :id="`tabpanel-mobile-${activeTab}`"
-      class="p-3 min-h-[400px]"
+      class="min-h-[400px] border-t border-border-subtle/80 bg-surface-muted/30 p-3"
       role="tabpanel"
       :aria-labelledby="`mobile-tab-selector`"
     >
@@ -67,88 +73,101 @@
     </div>
   </div>
 
-  <!-- Tabs Web (diseño original) -->
-  <div class="hidden sm:block bg-elevated/90 backdrop-blur-sm rounded-card-lg shadow-card-lg border border-border-subtle overflow-hidden">
-    <!-- Tabs Navigation -->
-    <div class="border-b border-border-subtle bg-surface-muted">
-      <div 
-        class="flex items-center justify-between"
-      >
-        <div 
-          class="flex overflow-x-auto scrollbar-hide flex-1"
-          role="tablist"
-          aria-label="Secciones de animes"
-          tabindex="0"
-          @keydown="handleKeydown"
-        >
-          <button
-            v-for="(seccion, index) in sections"
-            :id="`tab-${seccion.id}`"
-            :key="seccion.id"
-            :ref="el => { if (el) tabRefs[index] = el }"
-            :class="[
-              'px-2 sm:px-3 md:px-4 py-2 sm:py-3 font-semibold text-xs sm:text-sm transition-all duration-200 whitespace-nowrap border-b-2 relative focus:outline-none focus:ring-2 focus:ring-accent-ring focus:ring-offset-2',
-              activeTab === seccion.id
-                ? 'text-accent border-accent bg-elevated'
-                : 'text-ink-muted border-transparent hover:text-accent hover:bg-elevated/80',
-              draggedOverTab === seccion.id ? 'bg-accent-muted border-accent-border' : ''
-            ]"
-            role="tab"
-            :aria-selected="activeTab === seccion.id"
-            :aria-controls="`tabpanel-${seccion.id}`"
-            :tabindex="activeTab === seccion.id ? 0 : -1"
-            @click="handleTabClick(seccion.id)"
-            @focus="handleTabFocus(seccion.id)"
-            @dragover="handleTabDragOver($event, seccion.id)"
-            @dragleave="handleTabDragLeave"
-            @drop="handleTabDrop($event, seccion.id)"
-          >
-            <div class="flex items-center space-x-2">
-              <span>{{ seccion.nombre }}</span>
-              <span 
-                :class="[
-                  'px-2 py-0.5 rounded-full text-xs font-bold',
-                  activeTab === seccion.id
-                    ? 'bg-accent-muted text-accent-hover'
-                    : 'bg-surface-muted text-ink-muted'
-                ]"
-              >
-                {{ getCount(seccion.id) }}
-              </span>
-            </div>
-          </button>
+  <!-- Tabs escritorio -->
+  <div
+    class="hidden sm:block overflow-hidden rounded-2xl border border-border-subtle bg-gradient-to-b from-elevated to-surface-muted/40 shadow-card-lg ring-1 ring-black/[0.04]"
+  >
+    <div
+      class="h-1 w-full bg-gradient-to-r from-accent via-violet-500 to-cyan-500/60"
+      aria-hidden="true"
+    />
+
+    <div
+      class="flex flex-col gap-4 border-b border-border-subtle/90 bg-gradient-to-br from-accent-muted/25 via-elevated/95 to-surface-muted/50 px-4 py-4 sm:px-5 sm:py-5 md:px-6 md:py-6"
+    >
+      <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-ink-muted">
+        <p class="font-medium">Navega por estados y cambia el tipo de vista al instante.</p>
+        <div class="inline-flex items-center gap-1.5">
+          <kbd class="rounded border border-border-subtle bg-elevated px-1.5 py-0.5 text-[11px] text-ink">←</kbd>
+          <kbd class="rounded border border-border-subtle bg-elevated px-1.5 py-0.5 text-[11px] text-ink">→</kbd>
+          <span>Secciones</span>
         </div>
-        
-        <!-- Selector de vista (visible en todas las secciones) -->
-        <div class="flex items-center space-x-1 bg-surface-muted rounded-lg p-1 ml-4 mr-4">
+      </div>
+
+      <div class="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between lg:gap-8 xl:gap-10">
+      <!-- Secciones: pastillas -->
+      <div
+        class="scrollbar-hide flex min-w-0 flex-1 items-center gap-3 overflow-x-auto overflow-y-visible py-2 pl-1 pr-2 -mx-1 sm:gap-3.5 sm:py-2.5 sm:pr-3"
+        role="tablist"
+        aria-label="Secciones de animes"
+        tabindex="0"
+        @keydown="handleKeydown"
+      >
+        <button
+          v-for="(seccion, index) in sections"
+          :id="`tab-${seccion.id}`"
+          :key="seccion.id"
+          :ref="(el) => { if (el) tabRefs[index] = el }"
+          type="button"
+          :class="[
+            'inline-flex max-w-[min(100%,18rem)] shrink-0 items-center gap-2.5 rounded-full px-4 py-2.5 text-left text-xs font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent-ring focus:ring-offset-2 sm:px-5 sm:py-3 sm:text-sm',
+            activeTab === seccion.id
+              ? 'bg-gradient-to-r from-accent to-accent-hover text-white shadow-md ring-2 ring-accent-border/50'
+              : 'bg-elevated/90 text-ink-muted shadow-sm ring-1 ring-border-subtle hover:bg-elevated hover:text-accent hover:ring-accent-border/40',
+            draggedOverTab === seccion.id ? 'ring-2 ring-accent ring-offset-2' : ''
+          ]"
+          role="tab"
+          :aria-selected="activeTab === seccion.id"
+          :aria-controls="`tabpanel-${seccion.id}`"
+          :tabindex="activeTab === seccion.id ? 0 : -1"
+          @click="handleTabClick(seccion.id)"
+          @focus="handleTabFocus(seccion.id)"
+          @dragover="handleTabDragOver($event, seccion.id)"
+          @dragleave="handleTabDragLeave"
+          @drop="handleTabDrop($event, seccion.id)"
+        >
+          <span class="min-w-0 flex-1 leading-snug sm:whitespace-normal">{{ seccion.nombre }}</span>
+          <span
+            :class="[
+              'inline-flex min-h-[1.5rem] min-w-[1.75rem] shrink-0 items-center justify-center rounded-full px-2 py-0.5 text-[10px] font-bold tabular-nums sm:text-xs',
+              activeTab === seccion.id
+                ? 'bg-white/20 text-white'
+                : 'bg-surface-muted text-ink-muted'
+            ]"
+          >
+            {{ getCount(seccion.id) }}
+          </span>
+        </button>
+      </div>
+
+      <!-- Selector de vista: solo iconos, minimal -->
+      <div
+        class="flex shrink-0 items-center"
+        role="toolbar"
+        aria-label="Tipo de vista"
+      >
+        <div
+          class="inline-flex items-center gap-px rounded-lg border border-border-subtle/70 bg-surface-muted/35 p-0.5"
+        >
           <button
             v-for="view in viewModes"
             :key="view.id"
+            type="button"
             :class="[
-              'p-2 rounded-md transition-all focus:outline-none focus:ring-2 focus:ring-accent-ring',
+              'flex h-9 w-9 items-center justify-center rounded-md transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring focus-visible:ring-offset-2 sm:h-10 sm:w-10',
               viewMode === view.id
                 ? 'bg-elevated text-accent shadow-sm'
-                : 'text-ink-muted hover:text-ink'
+                : 'text-ink-subtle hover:bg-elevated/75 hover:text-ink'
             ]"
+            :aria-pressed="viewMode === view.id"
             :aria-label="`Cambiar a vista ${view.label}`"
             :title="view.label"
             @click="$emit('change-view', view.id)"
           >
-            <svg v-if="view.id === 'series'" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-            </svg>
-            <svg v-else-if="view.id === 'cards'" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-            </svg>
-            <svg v-else-if="view.id === 'list-image'" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4l4 4-4 4" />
-            </svg>
-            <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
+            <AnimeTabsViewIcon :mode="view.id" icon-class="h-[1.125rem] w-[1.125rem] sm:h-5 sm:w-5" />
           </button>
         </div>
+      </div>
       </div>
     </div>
 
@@ -170,6 +189,7 @@
 
 <script setup>
 import { ref, onMounted, watch } from 'vue'
+import AnimeTabsViewIcon from './AnimeTabsViewIcon.vue'
 
 const props = defineProps({
   activeTab: { type: String, default: '' },
@@ -187,11 +207,10 @@ const emit = defineEmits(['change-tab', 'change-view', 'drop-anime'])
 const isDragOver = ref(false)
 const draggedOverTab = ref(null)
 
-// Modos de vista disponibles
 const viewModes = [
   { id: 'series', label: 'Series' },
   { id: 'cards', label: 'Cards' },
-  { id: 'list-image', label: 'Lista con Imagen' },
+  { id: 'list-image', label: 'Lista con imagen' },
   { id: 'list', label: 'Lista' }
 ]
 

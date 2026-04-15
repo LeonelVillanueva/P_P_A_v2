@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <Teleport to="body">
     <Transition name="detail-modal">
       <div
@@ -13,7 +13,7 @@
           @click="$emit('close')"
         />
         <div
-          class="relative w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-2xl bg-white shadow-2xl flex flex-col"
+          class="relative flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-border-subtle bg-elevated shadow-2xl"
           @click.stop
         >
           <!-- Cabecera visual -->
@@ -50,19 +50,19 @@
             </div>
           </div>
 
-          <div class="overflow-y-auto flex-1 px-5 sm:px-6 py-5 space-y-5">
-            <section v-if="anime.titulo_entrega" class="text-sm text-gray-600">
-              <span class="text-gray-400 font-medium">Obra (título original) · </span>{{ anime.titulo_original }}
+          <div class="flex-1 space-y-5 overflow-y-auto px-5 py-5 sm:px-6">
+            <section v-if="anime.titulo_entrega" class="text-sm text-ink-muted">
+              <span class="font-medium text-ink-muted">Obra (título original) · </span>{{ anime.titulo_original }}
             </section>
 
-            <section class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <section class="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div
                 v-for="row in infoRows"
                 :key="row.label"
-                class="rounded-xl border border-gray-100 bg-gray-50/80 px-4 py-3"
+                class="rounded-xl border border-border-subtle bg-surface-muted/80 px-4 py-3"
               >
-                <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-400">{{ row.label }}</p>
-                <p class="text-sm text-gray-900 mt-0.5 font-medium">{{ row.value }}</p>
+                <p class="text-[11px] font-semibold uppercase tracking-wide text-ink-muted">{{ row.label }}</p>
+                <p class="mt-0.5 text-sm font-medium text-ink">{{ row.value }}</p>
               </div>
             </section>
 
@@ -70,7 +70,7 @@
               <span
                 v-for="t in anime.temporadas"
                 :key="t"
-                class="px-3 py-1 rounded-full text-xs font-semibold bg-purple-50 text-purple-800 border border-purple-100"
+                class="rounded-full border border-accent-border/30 bg-accent-muted/30 px-3 py-1 text-xs font-semibold text-ink"
               >
                 {{ t }}
               </span>
@@ -119,17 +119,17 @@
             </section>
           </div>
 
-          <div class="shrink-0 flex gap-3 justify-end px-5 sm:px-6 py-4 border-t border-gray-100 bg-gray-50/90">
+          <div class="flex shrink-0 justify-end gap-3 border-t border-border-subtle bg-surface-muted/90 px-5 py-4 sm:px-6">
             <button
               type="button"
-              class="px-4 py-2.5 rounded-xl text-sm font-medium text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 transition-colors"
+              class="rounded-xl border border-border-subtle bg-elevated px-4 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-surface-muted"
               @click="$emit('close')"
             >
               Cerrar
             </button>
             <button
               type="button"
-              class="px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-md transition-colors"
+              class="rounded-xl bg-gradient-to-r from-accent to-accent-hover px-4 py-2.5 text-sm font-semibold text-accent-foreground shadow-card transition hover:brightness-110"
               @click="$emit('edit', anime)"
             >
               Editar información

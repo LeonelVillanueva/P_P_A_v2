@@ -1,4 +1,5 @@
 import { supabase } from '../config/supabase'
+import { callSecureDataApi } from './secureDataApi'
 
 /**
  * Servicio para operaciones de configuración con validación
@@ -100,27 +101,21 @@ export const configService = {
    * Actualizar configuración (estados o temporadas)
    */
   async update(tipo, valores) {
-    const { error } = await supabase
-      .from('configuracion')
-      .update({ [tipo]: valores })
-      .eq('id', 1)
-    
-    if (error) throw error
+    await callSecureDataApi('updateConfiguracion', {
+      payload: { [tipo]: valores }
+    })
   },
 
   /**
    * Guardar estados y qué estados muestran el paso Seguimiento en el modal (una sola petición)
    */
   async updateEstadosYSeguimiento(estados, estadosPasoSeguimiento) {
-    const { error } = await supabase
-      .from('configuracion')
-      .update({
+    await callSecureDataApi('updateConfiguracion', {
+      payload: {
         estados,
         estados_paso_seguimiento: estadosPasoSeguimiento
-      })
-      .eq('id', 1)
-
-    if (error) throw error
+      }
+    })
   }
 }
 

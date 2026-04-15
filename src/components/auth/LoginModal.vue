@@ -1,25 +1,85 @@
 <template>
-  <div 
-    class="fixed inset-0 z-[9999] flex items-center justify-center bg-gradient-to-br from-accent-hover via-violet-950 to-slate-900"
+  <div
+    class="login-shell fixed inset-0 z-[9999] flex items-center justify-center overflow-hidden bg-slate-950 p-4 sm:p-6"
     role="dialog"
     aria-modal="true"
     aria-labelledby="login-title"
     aria-describedby="login-description"
   >
-    <div 
+    <!-- Fondo WebGL (aurora) + velado para legibilidad del formulario -->
+    <LoginShaderBackground />
+    <div
+      class="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-b from-slate-950/75 via-slate-950/55 to-slate-950/90"
+      aria-hidden="true"
+    />
+    <div
+      class="pointer-events-none absolute inset-0 z-[1] bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(168,85,247,0.22),transparent_55%)]"
+      aria-hidden="true"
+    />
+    <div
+      class="pointer-events-none absolute inset-0 z-[1] opacity-[0.06] motion-reduce:opacity-0"
+      aria-hidden="true"
+      style="background-image: linear-gradient(rgba(255,255,255,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.07) 1px, transparent 1px); background-size: 48px 48px;"
+    />
+
+    <div
       ref="modalRef"
-      class="bg-elevated rounded-card-lg shadow-card-lg p-6 sm:p-8 max-w-md w-full mx-4 border-2 border-accent-border"
+      class="relative z-10 flex w-full max-w-md flex-col overflow-hidden rounded-card-lg border border-white/10 bg-elevated/95 shadow-[0_0_0_1px_rgba(255,255,255,0.06),0_25px_80px_-20px_rgba(147,51,234,0.35),0_20px_50px_-30px_rgba(15,23,42,0.9)] backdrop-blur-xl motion-safe:transition motion-safe:duration-300 lg:max-w-4xl lg:flex-row lg:rounded-2xl motion-reduce:transition-none"
       @keydown.esc="handleEscape"
     >
-      <div class="text-center mb-6">
-        <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-accent to-accent-hover rounded-full mb-4" aria-hidden="true">
-          <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+      <!-- Panel de marca (split hero — solo lg; UI UX Pro Max: jerarquía + espacio en blanco) -->
+      <aside
+        class="relative hidden min-h-[200px] flex-col justify-between border-b border-white/10 bg-gradient-to-br from-slate-900/90 via-violet-950/80 to-slate-950/95 p-8 text-white lg:flex lg:w-[42%] lg:border-b-0 lg:border-r lg:min-h-[440px]"
+        aria-hidden="true"
+      >
+        <div class="flex flex-1 flex-col justify-center">
+          <p class="font-display text-[11px] font-bold uppercase tracking-[0.2em] text-white/50">
+            Colección privada
+          </p>
+          <p class="font-display mt-3 text-3xl font-bold leading-tight tracking-tight">
+            {{ appBrandName }}
+          </p>
+        </div>
+        <div
+          class="mt-8 flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/15"
+          aria-hidden="true"
+        >
+          <svg class="h-7 w-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
           </svg>
         </div>
-        <h1 id="login-title" class="text-page-title mb-2">Anime Saver</h1>
-        <p id="login-description" class="text-sm sm:text-base text-ink-muted">Acceso Privado</p>
-      </div>
+      </aside>
+
+      <!-- Formulario -->
+      <div class="flex flex-1 flex-col p-6 sm:p-8">
+        <div class="mb-6 text-center lg:text-left">
+          <div
+            class="mx-auto mb-4 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-accent to-accent-hover shadow-card-lg ring-2 ring-accent-border/60 lg:mx-0"
+            aria-hidden="true"
+          >
+            <svg class="h-7 w-7 text-accent-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          </div>
+          <h1 id="login-title" class="font-display text-2xl font-bold tracking-tight text-ink sm:text-page-title">
+            {{ appBrandName }}
+          </h1>
+        </div>
+
+        <div
+          id="login-description"
+          class="mb-6 flex gap-3 rounded-xl border-2 border-accent/35 bg-gradient-to-br from-accent-muted/90 to-accent-muted/40 px-4 py-3.5 shadow-sm ring-1 ring-accent-border/40"
+          role="status"
+        >
+          <div class="mt-0.5 shrink-0 text-accent" aria-hidden="true">
+            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          </div>
+          <p class="text-base font-semibold leading-snug text-ink sm:text-[1.05rem]">
+            Esta aplicación es de acceso privado
+          </p>
+        </div>
 
       <form class="space-y-4" @submit.prevent="handleLogin">
         <div>
@@ -32,7 +92,7 @@
               v-model="password"
               :type="showPassword ? 'text' : 'password'"
               placeholder="Ingresa tu contraseña"
-              class="w-full px-4 py-3 pr-12 border-2 border-border-subtle rounded-card focus:ring-2 focus:ring-accent-ring focus:border-accent transition-all outline-none bg-elevated text-ink"
+              class="w-full px-4 py-3 pr-12 border-2 border-border-subtle rounded-card transition-all outline-none bg-elevated text-ink focus:border-accent focus:ring-2 focus:ring-accent-ring"
               :class="{ 'border-red-500': error }"
               :aria-invalid="error ? 'true' : 'false'"
               :aria-describedby="error ? 'password-error' : undefined"
@@ -42,7 +102,7 @@
             />
             <button
               type="button"
-              class="absolute right-3 top-1/2 -translate-y-1/2 text-ink-muted hover:text-ink transition-colors p-1 focus:outline-none focus:ring-2 focus:ring-accent-ring focus:ring-offset-2 rounded"
+              class="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer rounded p-1 text-ink-muted transition-colors duration-200 hover:text-ink focus:outline-none focus:ring-2 focus:ring-accent-ring focus:ring-offset-2"
               :aria-label="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
               :title="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
               @click="showPassword = !showPassword"
@@ -67,10 +127,6 @@
           </p>
         </div>
 
-        <p v-if="!showSessionPicker" class="text-xs text-ink-subtle">
-          La duración de sesión extendida sigue vigente; podrás cambiarla cuando venza ese plazo.
-        </p>
-
         <div v-if="showSessionPicker">
           <label for="session-duration" class="block text-sm font-semibold text-ink mb-2">
             Mantener sesión
@@ -78,7 +134,7 @@
           <select
             id="session-duration"
             v-model.number="sessionDays"
-            class="w-full px-4 py-3 border-2 border-border-subtle rounded-card focus:ring-2 focus:ring-accent-ring focus:border-accent transition-all outline-none bg-elevated text-ink"
+            class="w-full px-4 py-3 border-2 border-border-subtle rounded-card transition-all outline-none bg-elevated text-ink focus:border-accent focus:ring-2 focus:ring-accent-ring"
             :disabled="loading"
             aria-describedby="session-duration-hint"
           >
@@ -95,30 +151,31 @@
           type="submit"
           :disabled="loading || !password"
           :aria-busy="loading"
-          class="w-full px-6 py-3 text-accent-foreground bg-gradient-to-r from-accent to-accent-hover rounded-card hover:brightness-110 transition-all duration-200 font-semibold shadow-card-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 focus:outline-none focus:ring-2 focus:ring-accent-ring focus:ring-offset-2"
+          class="login-cta group relative flex w-full cursor-pointer items-center justify-center space-x-2 overflow-hidden rounded-card bg-gradient-to-r from-accent to-accent-hover px-6 py-3 font-semibold text-accent-foreground shadow-card-lg transition-[transform,box-shadow,filter] duration-200 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring focus-visible:ring-offset-2 focus-visible:ring-offset-elevated disabled:cursor-not-allowed disabled:opacity-50 motion-safe:hover:-translate-y-0.5 motion-safe:hover:shadow-xl motion-safe:hover:brightness-110"
         >
-          <svg v-if="loading" class="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <svg v-if="loading" class="h-5 w-5 animate-spin motion-reduce:animate-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
           <span>{{ loading ? 'Verificando...' : 'Acceder' }}</span>
         </button>
       </form>
-
-      <p class="mt-6 text-xs text-center text-ink-subtle">
-        Esta aplicación es de acceso privado
-      </p>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
+import LoginShaderBackground from './LoginShaderBackground.vue'
 import { useAuthStore } from '../../stores/authStore'
 import { useFocusTrap } from '../../composables/useFocusTrap'
 import {
   shouldShowSessionPicker,
   getLastSessionDaysForLogin
 } from '../../services/authService'
+
+/** Nombre de marca en pantalla de acceso (único punto de cambio visual). */
+const appBrandName = 'Hanare'
 
 const authStore = useAuthStore()
 const password = ref('')
@@ -198,4 +255,3 @@ const handleLogin = async () => {
   }
 }
 </script>
-

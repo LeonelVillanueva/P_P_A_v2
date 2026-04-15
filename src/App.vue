@@ -9,8 +9,8 @@
     </a>
 
     <!-- Mostrar loading mientras verifica autenticación (solo en carga inicial) -->
-    <div 
-      v-if="authStore.checkingAuth && !hasCheckedOnce" 
+    <div
+      v-if="authStore.checkingAuth"
       class="min-h-screen flex items-center justify-center bg-gradient-to-br from-accent-hover via-violet-950 to-slate-900"
       role="status"
       aria-live="polite"
@@ -28,10 +28,10 @@
     </div>
     
     <!-- Mostrar login si no está autenticado y ya verificó -->
-    <LoginModal v-if="!authStore.isAuthenticated && hasCheckedOnce && !authStore.checkingAuth" />
+    <LoginModal v-else-if="!authStore.isAuthenticated" />
     
     <!-- Mostrar aplicación si está autenticado -->
-    <template v-if="authStore.isAuthenticated">
+    <template v-else>
       <main id="main-content" role="main">
         <router-view />
       </main>
@@ -83,6 +83,12 @@
         :error="errorStore.errors[0]"
         @dismiss="errorStore.removeError(errorStore.errors[0].id)"
       />
+
+      <!-- Transición login → app (canvas; solo tras login con contraseña) -->
+      <LoginRevealOverlay
+        v-if="authStore.postLoginRevealPending"
+        @complete="authStore.completePostLoginReveal()"
+      />
     </template>
     
     <!-- Vercel Analytics (siempre activo) -->
@@ -91,26 +97,26 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue'
+import { defineAsyncComponent } from 'vue'
 import { Analytics } from '@vercel/analytics/vue'
 import { useErrorStore } from './stores/errorStore'
 import { useAuthStore } from './stores/authStore'
 import { useAnimeStore } from './stores/animeStore'
 import ErrorNotification from './components/errors/ErrorNotification.vue'
 import LoginModal from './components/auth/LoginModal.vue'
-import CommandPalette from './components/common/CommandPalette.vue'
-import ActivityHistory from './components/common/ActivityHistory.vue'
-import ConfigSection from './components/config/ConfigSection.vue'
-import SuccessPopup from './components/common/SuccessPopup.vue'
-import ShortcutsHelpModal from './components/common/ShortcutsHelpModal.vue'
+import LoginRevealOverlay from './components/auth/LoginRevealOverlay.vue'
 import { useSupabaseKeepAlive } from './composables/useSupabaseKeepAlive'
 import { provideAuthenticatedAppShell } from './composables/useAuthenticatedAppShell'
+
+const CommandPalette = defineAsyncComponent(() => import('./components/common/CommandPalette.vue'))
+const ActivityHistory = defineAsyncComponent(() => import('./components/common/ActivityHistory.vue'))
+const ConfigSection = defineAsyncComponent(() => import('./components/config/ConfigSection.vue'))
+const SuccessPopup = defineAsyncComponent(() => import('./components/common/SuccessPopup.vue'))
+const ShortcutsHelpModal = defineAsyncComponent(() => import('./components/common/ShortcutsHelpModal.vue'))
 
 const errorStore = useErrorStore()
 const authStore = useAuthStore()
 const animeStore = useAnimeStore()
-const hasCheckedOnce = ref(false)
-
 const appShell = provideAuthenticatedAppShell()
 
 // Keep-alive cliente: pings frecuentes mientras la app está abierta
@@ -119,27 +125,6 @@ useSupabaseKeepAlive({
   enabled: true
 })
 
-// Marcar que ya se verificó una vez cuando checkingAuth cambia a false
-watch(() => authStore.checkingAuth, (checking) => {
-  if (!checking) {
-    hasCheckedOnce.value = true
-  }
-})
-
-// También marcar cuando isAuthenticated cambia a true (después de login exitoso)
-watch(() => authStore.isAuthenticated, (authenticated) => {
-  if (authenticated) {
-    hasCheckedOnce.value = true
-  }
-})
-
-// También marcar después de un tiempo para evitar bloqueos infinitos
-onMounted(() => {
-  setTimeout(() => {
-    if (!hasCheckedOnce.value) {
-      hasCheckedOnce.value = true
-    }
-  }, 3000) // Máximo 3 segundos de espera
-})
+// Mantener el setup limpio: el render ahora depende solo de checkingAuth/isAuthenticated.
 </script>
 

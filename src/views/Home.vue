@@ -14,72 +14,91 @@
     />
 
     <div class="mx-auto w-full max-w-[min(100%,2200px)] px-2 sm:px-3 md:px-4 lg:px-5 xl:px-6 py-3 sm:py-4 md:py-5">
-      <!-- Sistema de Pestañas -->
-      <AnimeTabs
-        :active-tab="activeTab"
-        :sections="sections"
-        :get-count="getSectionCount"
-        :view-mode="viewMode"
-        @change-tab="activeTab = $event"
-        @change-view="setViewMode"
-        @drop-anime="handleDropAnime"
-      >
-        <template #default="{ activeTab: currentTab }">
-          <Transition name="fade" mode="out-in">
-            <div :key="currentTab">
-              <!-- Barra de búsqueda y filtros -->
-              <SearchBar
-                v-if="!animeStore.loading"
-                :estados="animeStore.estados"
-                :temporadas="animeStore.temporadas"
-                :total-count="animeStore.animes.length"
-                :filtered-count="filteredAnimes.length"
-                :is-global-search="hasGlobalSearch"
-                @update:search="searchQuery = $event"
-                @update:filters="filters = $event"
-              />
+      <div class="home-layout-shell home-shell-enter relative isolate">
+        <div
+          class="pointer-events-none absolute inset-x-0 -top-6 z-0 h-28 bg-[radial-gradient(70%_65%_at_50%_0%,rgba(147,51,234,0.12),transparent_72%)]"
+          aria-hidden="true"
+        />
+        <div class="relative z-10">
+        <!-- Sistema de Pestañas -->
+        <AnimeTabs
+          :active-tab="activeTab"
+          :sections="sections"
+          :get-count="getSectionCount"
+          :view-mode="viewMode"
+          @change-tab="activeTab = $event"
+          @change-view="setViewMode"
+          @drop-anime="handleDropAnime"
+        >
+          <template #default="{ activeTab: currentTab }">
+            <Transition name="home-tab" mode="out-in">
+              <div :key="currentTab" class="space-y-4 sm:space-y-5">
+                <!-- Barra de búsqueda y filtros -->
+                <div
+                  v-if="!animeStore.loading"
+                  class="home-block home-block--search home-stagger"
+                  style="animation-delay: 0ms"
+                >
+                  <SearchBar
+                    :estados="animeStore.estados"
+                    :temporadas="animeStore.temporadas"
+                    :anime-titles="animeTitles"
+                    :total-count="animeStore.animes.length"
+                    :filtered-count="filteredAnimes.length"
+                    :is-global-search="hasGlobalSearch"
+                    @update:search="searchQuery = $event"
+                    @update:filters="filters = $event"
+                  />
+                </div>
 
-              <!-- Loading State -->
-              <AnimeLoadingState v-if="animeStore.loading" />
+                <div
+                  class="home-block home-block--main home-stagger"
+                  style="animation-delay: 72ms"
+                >
+                  <!-- Loading State -->
+                  <AnimeLoadingState v-if="animeStore.loading" />
 
-              <!-- Empty State -->
-              <AnimeEmptyState 
-                v-else-if="filteredAnimes.length === 0"
-                @add-anime="handleOpenAnimeModal"
-              />
+                  <!-- Empty State -->
+                  <AnimeEmptyState
+                    v-else-if="filteredAnimes.length === 0"
+                    @add-anime="handleOpenAnimeModal"
+                  />
 
-              <!-- Vista de Series Agrupadas (nuevo modo por defecto) -->
-              <AnimeSeriesView
-                v-else-if="viewMode === 'series'"
-                :series="filteredSeries"
-                @edit="animeModal.open"
-                @delete="handleDeleteAnime"
-                @update-from-api="handleUpdateFromApi"
-                @associate-jikan="handleAssociateJikan"
-              />
+                  <!-- Vista de Series Agrupadas (nuevo modo por defecto) -->
+                  <AnimeSeriesView
+                    v-else-if="viewMode === 'series'"
+                    :series="filteredSeries"
+                    @edit="animeModal.open"
+                    @delete="handleDeleteAnime"
+                    @update-from-api="handleUpdateFromApi"
+                    @associate-jikan="handleAssociateJikan"
+                  />
 
-              <!-- Animes Grid (vista tradicional) -->
-              <AnimeGrid
-                v-else
-                :animes="filteredAnimes"
-                :series="gridSeries"
-                :section-name="getSectionName(currentTab)"
-                :count="gridHeaderCount"
-                :view-mode="viewMode"
-                :section-id="currentTab"
-                @open-anime="openAnimeDetail"
-                @open-serie="serieDetailModal.open"
-                @edit-serie="handleEditSerieFromGrid"
-                @edit="animeModal.open"
-                @delete="handleDeleteAnime"
-                @hover="handleGridHover"
-                @leave="handleAnimeLeave"
-                @change-view="setViewMode"
-              />
-            </div>
-          </Transition>
-        </template>
-      </AnimeTabs>
+                  <!-- Animes Grid (vista tradicional) -->
+                  <AnimeGrid
+                    v-else
+                    :animes="filteredAnimes"
+                    :series="gridSeries"
+                    :section-name="getSectionName(currentTab)"
+                    :count="gridHeaderCount"
+                    :view-mode="viewMode"
+                    :section-id="currentTab"
+                    @open-anime="openAnimeDetail"
+                    @open-serie="serieDetailModal.open"
+                    @edit-serie="handleEditSerieFromGrid"
+                    @edit="animeModal.open"
+                    @delete="handleDeleteAnime"
+                    @hover="handleGridHover"
+                    @leave="handleAnimeLeave"
+                    @change-view="setViewMode"
+                  />
+                </div>
+              </div>
+            </Transition>
+          </template>
+        </AnimeTabs>
+        </div>
+      </div>
     </div>
 
     <!-- Modal Anime (edición / alta) -->
@@ -231,24 +250,26 @@ const hasGlobalSearch = computed(() => {
          filters.value.sortBy
 })
 
+const animeTitles = computed(() =>
+  (animeStore.animes || [])
+    .map((anime) => (anime.titulo_entrega || anime.titulo_original || '').trim())
+    .filter(Boolean)
+)
+
 // Animes filtrados (para vista tradicional)
 const filteredAnimes = computed(() => {
   // Si hay búsqueda o filtros activos, buscar globalmente (en todas las secciones)
   const hasActiveSearch = searchQuery.value.trim().length > 0
-  const hasActiveFilters = filters.value.estado || filters.value.temporada || filters.value.sortBy ||
-                          filters.value.año || filters.value.episodiosMin || filters.value.fechaDesde || filters.value.fechaHasta
-  
+  const hasActiveFilters =
+    filters.value.estado || filters.value.temporada || filters.value.sortBy
+
   const filterOptions = {
     search: searchQuery.value,
-    estado: hasActiveSearch || hasActiveFilters 
-      ? filters.value.estado || undefined  // Si hay búsqueda/filtros, no forzar estado de sección
-      : getStateBySection(activeTab.value),  // Si no hay búsqueda, usar estado de sección activa
+    estado: hasActiveSearch || hasActiveFilters
+      ? filters.value.estado || undefined
+      : getStateBySection(activeTab.value),
     temporada: filters.value.temporada || undefined,
-    sortBy: filters.value.sortBy,
-    año: filters.value.año || undefined,
-    episodiosMin: filters.value.episodiosMin || undefined,
-    fechaDesde: filters.value.fechaDesde || undefined,
-    fechaHasta: filters.value.fechaHasta || undefined
+    sortBy: filters.value.sortBy || undefined
   }
   
   let result = animeStore.filteredAnimes(filterOptions)
@@ -460,14 +481,70 @@ onUnmounted(() => {
   display: none;
 }
 
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.2s ease;
+.home-tab-enter-active,
+.home-tab-leave-active {
+  transition:
+    opacity 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.fade-enter-from,
-.fade-leave-to {
+.home-tab-enter-from {
   opacity: 0;
+  transform: translateY(10px);
+}
+
+.home-tab-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+/* Entrada inicial del layout (coherente con Stats) */
+.home-shell-enter {
+  animation: home-shell-in 0.48s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+@keyframes home-shell-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Bloques búsqueda + contenido al cargar / al cambiar de pestaña */
+.home-stagger {
+  animation: home-stagger-in 0.44s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+@keyframes home-stagger-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-shell-enter,
+  .home-stagger {
+    animation: none !important;
+  }
+
+  .home-tab-enter-active,
+  .home-tab-leave-active {
+    transition: opacity 0.15s ease !important;
+  }
+
+  .home-tab-enter-from,
+  .home-tab-leave-to {
+    transform: none !important;
+  }
 }
 </style>
 

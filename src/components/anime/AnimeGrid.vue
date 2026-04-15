@@ -31,7 +31,7 @@
     <!-- Vista: Cards — una card por obra si hay series agrupadas -->
     <div v-if="viewMode === 'cards'">
       <template v-if="useSerieCards">
-        <div class="space-y-3 sm:hidden">
+        <div class="home-stagger-children space-y-3 sm:hidden">
           <AnimeSerieGridCard
             v-for="serie in series"
             :key="serie.titulo_original"
@@ -45,7 +45,9 @@
             @drag-end="handleDragEnd"
           />
         </div>
-        <div class="hidden gap-5 sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div
+          class="home-stagger-children hidden gap-5 sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+        >
           <AnimeSerieGridCard
             v-for="serie in series"
             :key="'d-' + serie.titulo_original"
@@ -61,7 +63,7 @@
         </div>
       </template>
       <template v-else>
-        <div class="space-y-0 sm:hidden">
+        <div class="home-stagger-children space-y-0 sm:hidden">
           <AnimeCard
             v-for="anime in animes"
             :key="anime.id"
@@ -76,7 +78,9 @@
             @drag-end="handleDragEnd"
           />
         </div>
-        <div class="hidden grid-cols-2 gap-5 sm:grid lg:grid-cols-3 xl:grid-cols-4">
+        <div
+          class="home-stagger-children hidden grid-cols-2 gap-5 sm:grid lg:grid-cols-3 xl:grid-cols-4"
+        >
           <AnimeCard
             v-for="anime in animes"
             :key="anime.id"

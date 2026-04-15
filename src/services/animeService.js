@@ -1,6 +1,7 @@
 import { supabase } from '../config/supabase'
 import { validateId, validateAnimeName, validateImageUrl, validateEstado, validateTemporadas, validateAnimeData, sanitizeString } from '../utils/validators'
 import { normalizeSupabaseClientError } from '../utils/supabaseErrors'
+import { callSecureDataApi } from './secureDataApi'
 
 /** Límite por defecto al listar animes (evita respuestas enormes). */
 export const ANIME_LIST_DEFAULT_LIMIT = 2000
@@ -89,14 +90,8 @@ export const animeService = {
       throw new Error(`Validación fallida: ${validation.errors.join(', ')}`)
     }
     
-    const { data, error } = await supabase
-      .from('animes')
-      .insert([validation.data])
-      .select()
-      .single()
-    
-    if (error) throw error
-    return data
+    const result = await callSecureDataApi('createAnime', { payload: validation.data })
+    return result.data
   },
 
   /**
@@ -294,18 +289,14 @@ export const animeService = {
       throw new Error('No hay campos para actualizar')
     }
     
-    const { data, error } = await supabase
-      .from('animes')
-      .update({ 
-        ...validatedUpdates, 
-        updated_at: new Date().toISOString() 
-      })
-      .eq('id', idValidation.value)
-      .select()
-      .single()
-    
-    if (error) throw error
-    return data
+    const result = await callSecureDataApi('updateAnime', {
+      id: idValidation.value,
+      payload: {
+        ...validatedUpdates,
+        updated_at: new Date().toISOString()
+      }
+    })
+    return result.data
   },
 
   /**
@@ -318,12 +309,7 @@ export const animeService = {
       throw new Error(idValidation.error)
     }
     
-    const { error } = await supabase
-      .from('animes')
-      .delete()
-      .eq('id', idValidation.value)
-    
-    if (error) throw error
+    await callSecureDataApi('deleteAnime', { id: idValidation.value })
   }
 }
 

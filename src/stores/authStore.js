@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, readonly } from 'vue'
 import { login as apiLogin, verifyToken, getStoredToken, removeToken } from '../services/authService'
 import { checkRateLimit, recordFailedAttempt, resetAttempts } from '../utils/authSecurity'
 
@@ -14,6 +14,8 @@ export const useAuthStore = defineStore('auth', () => {
   const isAuthenticated = ref(false)
   const rateLimitKey = 'anime_saver_ip' // Identificador para rate limiting
   const checkingAuth = ref(false)
+  /** Solo true tras login con contraseña exitoso; no al restaurar sesión con token. */
+  const postLoginRevealPending = ref(false)
 
   /**
    * Obtener identificador único para rate limiting
@@ -125,6 +127,7 @@ export const useAuthStore = defineStore('auth', () => {
       // Establecer checkingAuth en false primero, luego isAuthenticated en true
       // Esto asegura que App.vue reaccione correctamente
       checkingAuth.value = false
+      postLoginRevealPending.value = true
       isAuthenticated.value = true
       
       // Resetear intentos fallidos
@@ -159,16 +162,23 @@ export const useAuthStore = defineStore('auth', () => {
    * Cerrar sesión
    */
   const logout = () => {
+    postLoginRevealPending.value = false
     isAuthenticated.value = false
     removeToken({ preserveSessionPickerPreference: true })
+  }
+
+  const completePostLoginReveal = () => {
+    postLoginRevealPending.value = false
   }
 
   return {
     isAuthenticated: computed(() => isAuthenticated.value),
     checkingAuth: computed(() => checkingAuth.value),
+    postLoginRevealPending: readonly(postLoginRevealPending),
     login,
     logout,
-    checkStoredSession
+    checkStoredSession,
+    completePostLoginReveal
   }
 })
 

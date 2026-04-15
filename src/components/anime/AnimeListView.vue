@@ -1,5 +1,5 @@
-﻿<template>
-  <div class="space-y-2">
+<template>
+  <div class="home-stagger-children space-y-2">
     <div
       v-for="anime in animes"
       :key="anime.id"

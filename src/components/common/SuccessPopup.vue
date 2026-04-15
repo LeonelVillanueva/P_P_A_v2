@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <Transition name="notification">
     <div
       v-if="show"
@@ -7,18 +7,18 @@
       aria-live="polite"
       aria-atomic="true"
     >
-      <div class="bg-white rounded-xl shadow-2xl border-2 border-green-200 p-4 flex items-start space-x-3">
-        <div class="flex-shrink-0 w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center" aria-hidden="true">
-          <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div class="flex items-start space-x-3 rounded-xl border border-emerald-200/80 bg-elevated p-4 shadow-2xl">
+        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-100" aria-hidden="true">
+          <svg class="h-6 w-6 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         </div>
         <div class="flex-1 min-w-0">
-          <p class="text-sm font-semibold text-gray-800">{{ message }}</p>
-          <p v-if="title && title !== 'Éxito'" class="text-xs text-gray-500 mt-1">{{ title }}</p>
+          <p class="text-sm font-semibold text-ink">{{ message }}</p>
+          <p v-if="title && title !== 'Éxito'" class="mt-1 text-xs text-ink-muted">{{ title }}</p>
         </div>
         <button
-          class="text-gray-400 hover:text-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 rounded"
+          class="rounded text-ink-muted transition-colors hover:text-ink focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
           aria-label="Cerrar notificación de éxito"
           @click="close"
         >

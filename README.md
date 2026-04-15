@@ -1,4 +1,4 @@
-# Anime Saver - Gestor de Animes
+# Hanare — Gestor de animes
 
 Aplicación web para gestionar y organizar tus animes favoritos, desarrollada con Vue 3, Tailwind CSS y Supabase.
 

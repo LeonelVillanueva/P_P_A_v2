@@ -26,7 +26,7 @@ export const APP_CHROME_ACTIONS = [
     emit: 'manual-ping',
     icon: 'wifi',
     ariaLabel: 'Ping manual a Supabase',
-    title: 'Registrar actividad en Supabase (mantener proyecto activo)',
+    title: 'Ping manual',
     variant: 'emerald',
   },
   {

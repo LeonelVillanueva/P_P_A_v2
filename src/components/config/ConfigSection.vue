@@ -9,77 +9,77 @@
     >
       <div 
         ref="modalContentRef"
-        class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[min(92vh,880px)] overflow-hidden flex flex-col border border-gray-100"
+        class="modal-dialog-shell bg-elevated flex max-h-[min(92vh,880px)] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-border-subtle shadow-2xl"
         @mousedown.stop
         @mouseup.stop
       >
         <!-- Header -->
-        <div class="bg-gradient-to-r from-purple-600 to-pink-600 px-3 sm:px-4 py-2.5 sm:py-3 flex justify-between items-center shrink-0">
-          <div class="flex items-center gap-2.5 sm:gap-3 min-w-0">
-            <div class="w-9 h-9 sm:w-10 sm:h-10 shrink-0 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-md">
-              <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="flex shrink-0 items-center justify-between gap-2 border-b border-border-subtle bg-surface-muted/90 px-3 py-2.5 sm:px-5 sm:py-3">
+          <div class="flex min-w-0 items-center gap-2.5 sm:gap-3">
+            <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent/15 sm:h-10 sm:w-10">
+              <svg class="h-5 w-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
             </div>
             <div class="min-w-0">
-              <h2 class="text-base sm:text-lg font-bold text-white truncate">Configuración</h2>
-              <p class="text-white/75 text-[11px] sm:text-xs mt-0.5 line-clamp-1">Estados, seguimiento en el modal y temporadas</p>
+              <h2 class="font-display truncate text-base font-semibold text-ink sm:text-lg">Configuración</h2>
+              <p class="mt-0.5 line-clamp-1 text-[11px] text-ink-muted sm:text-xs">Estados, seguimiento en el modal y temporadas</p>
             </div>
           </div>
           <button 
             type="button"
-            class="text-white/80 hover:text-white hover:bg-white/20 rounded-lg p-1.5 transition-all duration-200 shrink-0"
+            class="shrink-0 rounded-lg p-1.5 text-ink-muted transition-colors hover:bg-surface-muted hover:text-ink"
             @click="$emit('close')"
           >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
         <!-- Content -->
-        <div class="flex-1 min-h-0 overflow-y-auto p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-purple-50/30">
+        <div class="min-h-0 flex-1 overflow-y-auto bg-surface-muted/30 p-3 sm:p-4">
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
 
             <!-- Estados -->
-            <div class="bg-white rounded-xl shadow-md p-3 sm:p-4 border border-gray-200">
-              <div class="flex items-center gap-2 mb-2">
-                <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shrink-0">
-                  <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="bg-elevated rounded-xl shadow-card p-3 sm:p-4 border border-border-subtle">
+              <div class="mb-2 flex items-center gap-2">
+                <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent/15">
+                  <svg class="h-4 w-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
-                <h3 class="text-base sm:text-lg font-bold text-gray-800">Estados</h3>
+                <h3 class="text-base sm:text-lg font-semibold text-ink">Estados</h3>
               </div>
-              <p class="text-xs text-gray-500 mb-2">Estados disponibles para tus animes.</p>
-              <p class="text-[11px] text-gray-500 mb-3 leading-snug">
-                La casilla <span class="font-medium text-gray-600">Seg.</span> define si ese estado tendrá el paso extra «Seguimiento» (información de revisión) al crear o editar. Si todas están marcadas, se guarda como «todos» (igual que antes).
+              <p class="text-xs text-ink-muted mb-2">Estados disponibles para tus animes.</p>
+              <p class="text-[11px] text-ink-muted mb-3 leading-snug">
+                La casilla <span class="font-medium text-ink-muted">Seg.</span> define si ese estado tendrá el paso extra «Seguimiento» (información de revisión) al crear o editar. Si todas están marcadas, se guarda como «todos» (igual que antes).
               </p>
               <div class="space-y-2 mb-3">
                 <div 
                   v-for="(estado, index) in estadosLocales" 
                   :key="index"
-                  class="flex items-center gap-2 bg-gray-50 rounded-lg p-2 border border-gray-200 hover:border-blue-400 transition-all"
+                  class="flex items-center gap-2 rounded-lg border border-border-subtle bg-surface-muted/60 p-2 transition-all hover:border-accent/35"
                 >
-                  <div class="flex-shrink-0 w-7 h-7 bg-blue-100 text-blue-700 rounded-md flex items-center justify-center font-bold text-xs">
+                  <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-accent/15 text-xs font-bold text-accent">
                     {{ index + 1 }}
                   </div>
                   <label
-                    class="flex shrink-0 cursor-pointer items-center justify-center rounded-md border border-blue-200 bg-white px-1.5 py-1 text-[10px] font-semibold text-blue-800 hover:bg-blue-50"
+                    class="flex shrink-0 cursor-pointer items-center justify-center rounded-md border border-accent-border bg-elevated px-1.5 py-1 text-[10px] font-semibold text-accent hover:bg-accent-muted"
                     :title="'Paso Seguimiento en el modal para: ' + (estadosLocales[index] || '(vacío)')"
                   >
                     <input
                       v-model="seguimientoLocales[index]"
                       type="checkbox"
-                      class="h-3.5 w-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      class="h-3.5 w-3.5 rounded border-border-strong text-accent focus:ring-accent"
                     />
                     <span class="ml-0.5 hidden sm:inline">Seg.</span>
                   </label>
                   <input 
                     v-model="estadosLocales[index]"
                     type="text"
-                    class="flex-1 min-w-0 px-2.5 py-1.5 text-sm border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none bg-white"
+                    class="min-w-0 flex-1 rounded-md border border-border-subtle bg-elevated px-2.5 py-1.5 text-sm text-ink outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent/25"
                     placeholder="Ej: Vistos, En curso…"
                   />
                   <button 
@@ -95,7 +95,7 @@
                 </div>
                 <button 
                   type="button"
-                  class="w-full px-3 py-2 text-sm text-blue-600 border border-dashed border-blue-300 rounded-lg hover:bg-blue-50 hover:border-blue-400 transition-all font-medium flex items-center justify-center gap-1.5"
+                  class="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-accent/40 px-3 py-2 text-sm font-medium text-accent transition-all hover:border-accent/60 hover:bg-accent-muted"
                   @click="addEstado"
                 >
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -107,7 +107,7 @@
               <button 
                 type="button"
                 :disabled="saving"
-                class="w-full px-3 py-2 text-sm bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all font-semibold shadow disabled:opacity-50 flex items-center justify-center gap-2"
+                class="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-accent to-accent-hover px-3 py-2 text-sm font-semibold text-accent-foreground shadow-card transition hover:brightness-110 disabled:opacity-50"
                 @click="saveEstados"
               >
                 <svg v-if="!saving" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -118,29 +118,29 @@
             </div>
 
             <!-- Temporadas -->
-            <div class="bg-white rounded-xl shadow-md p-3 sm:p-4 border border-gray-200">
-              <div class="flex items-center gap-2 mb-2">
-                <div class="w-8 h-8 bg-gradient-to-br from-pink-500 to-pink-600 rounded-lg flex items-center justify-center shrink-0">
-                  <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="bg-elevated rounded-xl shadow-card p-3 sm:p-4 border border-border-subtle">
+              <div class="mb-2 flex items-center gap-2">
+                <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/15">
+                  <svg class="h-4 w-4 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
                   </svg>
                 </div>
-                <h3 class="text-base sm:text-lg font-bold text-gray-800">Temporadas</h3>
+                <h3 class="text-base sm:text-lg font-semibold text-ink">Temporadas</h3>
               </div>
-              <p class="text-xs text-gray-500 mb-3">Temporadas disponibles al crear o editar</p>
+              <p class="text-xs text-ink-muted mb-3">Temporadas disponibles al crear o editar</p>
               <div class="space-y-2 mb-3">
                 <div 
                   v-for="(temp, index) in temporadasLocales" 
                   :key="index"
-                  class="flex items-center gap-2 bg-gray-50 rounded-lg p-2 border border-gray-200 hover:border-pink-400 transition-all"
+                  class="flex items-center gap-2 rounded-lg border border-border-subtle bg-surface-muted/60 p-2 transition-all hover:border-emerald-400/50"
                 >
-                  <div class="flex-shrink-0 w-7 h-7 bg-pink-100 text-pink-700 rounded-md flex items-center justify-center font-bold text-xs">
+                  <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-emerald-100 text-xs font-bold text-emerald-800">
                     {{ index + 1 }}
                   </div>
                   <input 
                     v-model="temporadasLocales[index]"
                     type="text"
-                    class="flex-1 min-w-0 px-2.5 py-1.5 text-sm border border-gray-200 rounded-md focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-all outline-none bg-white"
+                    class="min-w-0 flex-1 rounded-md border border-border-subtle bg-elevated px-2.5 py-1.5 text-sm text-ink outline-none transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25"
                     placeholder="Ej: Temporada 1, Movie, OVA"
                   />
                   <button 
@@ -156,7 +156,7 @@
                 </div>
                 <button 
                   type="button"
-                  class="w-full px-3 py-2 text-sm text-pink-600 border border-dashed border-pink-300 rounded-lg hover:bg-pink-50 hover:border-pink-400 transition-all font-medium flex items-center justify-center gap-1.5"
+                  class="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-emerald-400/60 px-3 py-2 text-sm font-medium text-emerald-800 transition-all hover:bg-emerald-50"
                   @click="addTemporada"
                 >
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -168,7 +168,7 @@
               <button 
                 type="button"
                 :disabled="saving"
-                class="w-full px-3 py-2 text-sm bg-gradient-to-r from-pink-600 to-pink-700 text-white rounded-lg hover:from-pink-700 hover:to-pink-800 transition-all font-semibold shadow disabled:opacity-50 flex items-center justify-center gap-2"
+                class="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-emerald-600 to-emerald-700 px-3 py-2 text-sm font-semibold text-white shadow-card transition hover:brightness-110 disabled:opacity-50"
                 @click="saveTemporadas"
               >
                 <svg v-if="!saving" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -180,25 +180,25 @@
           </div>
 
           <!-- Exportar lista esencial -->
-          <div class="mt-3 sm:mt-4 bg-white rounded-xl shadow-md p-3 sm:p-4 border border-gray-200">
+          <div class="mt-3 sm:mt-4 bg-elevated rounded-xl shadow-card p-3 sm:p-4 border border-border-subtle">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div class="min-w-0">
-                <div class="flex items-center gap-2 mb-1">
-                  <div class="w-8 h-8 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg flex items-center justify-center shrink-0">
-                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <div class="mb-1 flex items-center gap-2">
+                  <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/15">
+                    <svg class="h-4 w-4 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                     </svg>
                   </div>
-                  <h3 class="text-base sm:text-lg font-bold text-gray-800">Exportar datos</h3>
+                  <h3 class="text-base sm:text-lg font-semibold text-ink">Exportar datos</h3>
                 </div>
-                <p class="text-xs text-gray-500 pl-0 sm:pl-10">
-                  Descarga un CSV con <strong class="font-medium text-gray-700">título original</strong>, <strong class="font-medium text-gray-700">título de entrega</strong>, <strong class="font-medium text-gray-700">temporadas</strong> y <strong class="font-medium text-gray-700">estado</strong> (UTF-8, compatible con Excel).
+                <p class="pl-0 text-xs text-ink-muted sm:pl-10">
+                  Descarga un CSV con <strong class="font-medium text-ink">título original</strong>, <strong class="font-medium text-ink">título de entrega</strong>, <strong class="font-medium text-ink">temporadas</strong> y <strong class="font-medium text-ink">estado</strong> (UTF-8, compatible con Excel).
                 </p>
               </div>
               <button
                 type="button"
                 :disabled="saving"
-                class="shrink-0 px-4 py-2.5 text-sm bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl hover:from-emerald-700 hover:to-teal-700 transition-all font-semibold shadow disabled:opacity-50 flex items-center justify-center gap-2"
+                class="flex shrink-0 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 px-4 py-2.5 text-sm font-semibold text-white shadow-card transition hover:brightness-110 disabled:opacity-50"
                 @click="$emit('export-essential')"
               >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -350,13 +350,13 @@ onUnmounted(() => {
   opacity: 0;
 }
 
-.modal-enter-active .bg-white,
-.modal-leave-active .bg-white {
+.modal-enter-active .modal-dialog-shell,
+.modal-leave-active .modal-dialog-shell {
   transition: transform 0.3s ease, opacity 0.3s ease;
 }
 
-.modal-enter-from .bg-white,
-.modal-leave-to .bg-white {
+.modal-enter-from .modal-dialog-shell,
+.modal-leave-to .modal-dialog-shell {
   transform: scale(0.95);
   opacity: 0;
 }

@@ -10,7 +10,7 @@
       >
         <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" @click="$emit('close')" />
         <div
-          class="relative flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+          class="relative flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-border-subtle bg-elevated shadow-2xl"
           @click.stop
         >
           <div class="relative h-36 shrink-0 bg-gradient-to-br from-slate-800 to-slate-900 sm:h-44">
@@ -43,19 +43,19 @@
           </div>
 
           <div class="flex-1 space-y-3 overflow-y-auto px-4 py-4 sm:px-6">
-            <p class="text-xs text-gray-500">
+            <p class="text-xs text-ink-muted">
               Solo lectura. Usa «Editar» en la ficha que quieras cambiar o eliminar.
             </p>
             <ul class="space-y-3">
               <li
                 v-for="anime in serie.temporadas"
                 :key="anime.id"
-                class="rounded-xl border border-gray-100 bg-gray-50/80 p-3 sm:p-4"
+                class="rounded-xl border border-border-subtle bg-surface-muted/80 p-3 sm:p-4"
               >
                 <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div class="min-w-0 flex-1">
-                    <p class="font-semibold text-gray-900">{{ displayTitle(anime) }}</p>
-                    <p v-if="anime.titulo_entrega" class="mt-0.5 text-xs text-gray-500">
+                    <p class="font-semibold text-ink">{{ displayTitle(anime) }}</p>
+                    <p v-if="anime.titulo_entrega" class="mt-0.5 text-xs text-ink-muted">
                       Obra: {{ anime.titulo_original }}
                     </p>
                     <div class="mt-2 flex flex-wrap gap-2">
@@ -68,7 +68,7 @@
                       <span
                         v-for="t in anime.temporadas || []"
                         :key="t"
-                        class="rounded-full border border-purple-100 bg-purple-50 px-2 py-0.5 text-xs font-medium text-purple-800"
+                        class="rounded-full border border-accent-border/30 bg-accent-muted/30 px-2 py-0.5 text-xs font-medium text-ink"
                       >
                         {{ t }}
                       </span>
@@ -77,14 +77,14 @@
                   <div class="flex shrink-0 gap-2">
                     <button
                       type="button"
-                      class="rounded-lg bg-purple-600 px-3 py-2 text-sm font-medium text-white hover:bg-purple-700"
+                      class="rounded-lg bg-gradient-to-r from-accent to-accent-hover px-3 py-2 text-sm font-medium text-accent-foreground shadow-card hover:brightness-110"
                       @click="$emit('edit', anime)"
                     >
                       Editar
                     </button>
                     <button
                       type="button"
-                      class="rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+                      class="rounded-lg border border-red-200 bg-elevated px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
                       @click="$emit('delete', anime)"
                     >
                       Eliminar
@@ -95,10 +95,10 @@
             </ul>
           </div>
 
-          <div class="shrink-0 border-t border-gray-100 bg-gray-50/90 px-4 py-3 sm:px-6">
+          <div class="shrink-0 border-t border-border-subtle bg-surface-muted/90 px-4 py-3 sm:px-6">
             <button
               type="button"
-              class="w-full rounded-xl border border-gray-200 bg-white py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 sm:w-auto"
+              class="w-full rounded-xl border border-border-subtle bg-elevated py-2.5 text-sm font-medium text-ink transition-colors hover:bg-surface-muted sm:w-auto"
               @click="$emit('close')"
             >
               Cerrar

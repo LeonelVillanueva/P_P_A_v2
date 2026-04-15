@@ -1,12 +1,12 @@
 <template>
-  <div class="flex min-h-0 flex-1 flex-col bg-white">
+  <div class="flex min-h-0 flex-1 flex-col bg-elevated">
     <div
-      class="flex shrink-0 items-center justify-between gap-2 border-b border-purple-100 bg-gradient-to-r from-purple-600 to-pink-600 px-3 py-2.5 sm:px-4"
+      class="flex shrink-0 items-center justify-between gap-2 border-b border-border-subtle bg-surface-muted/90 px-4 py-3 sm:px-5"
     >
-      <h3 class="text-sm font-bold text-white">Elegir obra</h3>
+      <h3 class="font-display text-sm font-semibold text-ink">Elegir obra</h3>
       <button
         type="button"
-        class="rounded-lg p-1.5 text-white/90 transition-colors hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50"
+        class="rounded-lg p-1.5 text-ink-muted transition-colors hover:bg-surface-muted hover:text-ink focus:outline-none focus:ring-2 focus:ring-accent/25"
         title="Cerrar panel"
         aria-label="Cerrar panel"
         @click="emit('close')"
@@ -17,15 +17,17 @@
       </button>
     </div>
 
-    <div class="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3 sm:p-4">
-      <div class="flex min-h-0 flex-1 flex-col gap-3 md:flex-row md:items-stretch md:gap-4">
-        <div class="flex w-full min-w-0 shrink-0 flex-col md:w-48 lg:w-52">
-          <label :for="searchId" class="mb-1 block text-[11px] font-medium text-gray-600">
+    <div
+      class="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto bg-surface-muted/30 p-4 sm:p-5"
+    >
+      <div class="flex min-h-0 flex-1 flex-col gap-5">
+        <div class="flex w-full min-w-0 shrink-0 flex-col gap-2">
+          <label :for="searchId" class="block text-xs font-medium text-ink-muted">
             Buscar obra ya registrada
           </label>
           <div class="relative">
             <svg
-              class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
+              class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -43,17 +45,17 @@
               v-model="searchQuery"
               type="search"
               autocomplete="off"
-              class="w-full rounded-lg border-2 border-gray-200 py-2.5 pl-9 pr-3 text-sm focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              class="w-full rounded-lg border border-border-subtle bg-elevated py-2.5 pl-9 pr-3 text-sm text-ink placeholder:text-ink-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/25"
               placeholder="Filtra la lista…"
             />
           </div>
-          <p class="mt-2 text-[11px] leading-snug text-gray-500">
-            La lista a la derecha tiene scroll propio.
+          <p class="text-[11px] leading-relaxed text-ink-muted">
+            Escribe para filtrar la lista inferior; el listado tiene scroll independiente.
           </p>
         </div>
 
         <div
-          class="flex min-h-[min(42vh,18rem)] flex-1 flex-col overflow-hidden rounded-xl border-2 border-purple-100 bg-white shadow-sm sm:min-h-[min(50vh,20rem)]"
+          class="flex min-h-[min(48vh,22rem)] min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-border-subtle bg-elevated shadow-card sm:min-h-[min(52vh,26rem)]"
           role="region"
           aria-label="Lista de obras registradas"
         >
@@ -73,21 +75,21 @@
             </button>
           </div>
           <div
-            class="shrink-0 border-b border-purple-100/80 bg-purple-50/90 px-3 py-2 text-xs font-semibold text-purple-900"
+            class="shrink-0 border-b border-border-subtle bg-surface-muted/90 px-3 py-2.5 text-xs font-semibold text-ink"
           >
             Obras en tu lista
-            <span class="ml-1 font-normal text-purple-700">({{ titulosFiltrados.length }})</span>
+            <span class="ml-1 font-normal text-ink-muted">({{ titulosFiltrados.length }})</span>
           </div>
           <ul
             v-if="titulosFiltrados.length > 0"
-            class="min-h-0 flex-1 list-none overflow-y-auto overscroll-y-contain py-1 [scrollbar-gutter:stable]"
+            class="min-h-0 flex-1 list-none overflow-y-auto overscroll-y-contain py-2 [scrollbar-gutter:stable]"
             role="listbox"
             :aria-label="'Obras existentes (' + titulosFiltrados.length + ')'"
           >
             <li v-for="titulo in titulosFiltrados" :key="titulo">
               <button
                 type="button"
-                class="flex w-full items-center px-3 py-2.5 text-left text-sm text-gray-800 transition-colors hover:bg-purple-50 focus:bg-purple-50 focus:outline-none"
+                class="flex w-full items-center px-3 py-3 text-left text-sm leading-snug text-ink transition-colors hover:bg-surface-muted focus:bg-surface-muted focus:outline-none sm:px-3.5"
                 role="option"
                 @click="elegirExistente(titulo)"
               >
@@ -99,29 +101,29 @@
             v-else
             class="flex min-h-0 flex-1 flex-col items-center justify-center gap-1 overflow-y-auto px-4 py-6 text-center"
           >
-            <p v-if="searchQuery.trim()" class="text-sm text-gray-600">
+            <p v-if="searchQuery.trim()" class="text-sm text-ink-muted">
               No hay coincidencias con «{{ searchQuery.trim() }}».
             </p>
-            <p v-else class="text-sm text-gray-600">Aún no hay obras registradas.</p>
-            <p class="text-[11px] text-gray-500">Usa el nombre manual abajo.</p>
+            <p v-else class="text-sm text-ink-muted">Aún no hay obras registradas.</p>
+            <p class="text-[11px] text-ink-muted">Usa el nombre manual abajo.</p>
           </div>
         </div>
       </div>
 
-      <div class="shrink-0 rounded-lg border border-dashed border-gray-300 bg-gray-50/80 p-3">
-        <p class="mb-2 text-[11px] font-medium text-gray-600">¿No está en la lista? Añade el título manualmente</p>
-        <div class="flex flex-col gap-2 sm:flex-row sm:items-end">
+      <div class="shrink-0 rounded-xl border border-dashed border-border-subtle bg-surface-muted/50 p-4">
+        <p class="mb-3 text-xs font-medium text-ink-muted">¿No está en la lista? Añade el título manualmente</p>
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
           <input
             :id="manualId"
             v-model="manualDraft"
             type="text"
-            class="min-h-[42px] flex-1 rounded-lg border-2 border-gray-200 px-3 py-2.5 text-sm focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            class="min-h-[42px] flex-1 rounded-lg border border-border-subtle bg-elevated px-3 py-2.5 text-sm text-ink placeholder:text-ink-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/25"
             placeholder="Ej: nombre exacto de la obra"
             @keydown.enter.prevent="confirmarManual"
           />
           <button
             type="button"
-            class="shrink-0 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2.5 text-sm font-semibold text-white shadow hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-purple-400 disabled:cursor-not-allowed disabled:opacity-50"
+            class="shrink-0 rounded-lg bg-gradient-to-r from-accent to-accent-hover px-4 py-2.5 text-sm font-semibold text-accent-foreground shadow-card hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-accent/40 disabled:cursor-not-allowed disabled:opacity-50"
             :disabled="!manualDraft.trim()"
             @click="confirmarManual"
           >

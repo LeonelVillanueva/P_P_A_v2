@@ -1,5 +1,5 @@
-﻿<template>
-  <div class="space-y-3">
+<template>
+  <div class="home-stagger-children space-y-3">
     <!-- Serie Agrupada -->
     <div
       v-for="serie in series"

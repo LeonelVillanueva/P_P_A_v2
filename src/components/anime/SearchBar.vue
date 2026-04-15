@@ -1,168 +1,182 @@
 <template>
   <div class="mb-4">
-    <div class="bg-elevated rounded-card shadow-card border border-border-subtle p-3 sm:p-4">
-      <!-- Fila 1: búsqueda (prioridad visual) -->
-      <div class="relative w-full">
-        <input
-          ref="searchInputRef"
-          v-model="searchQuery"
-          type="text"
-          placeholder="Buscar anime por nombre..."
-          class="w-full px-4 py-3 pl-11 border-2 border-border-subtle rounded-card focus:ring-2 focus:ring-accent-ring focus:border-accent transition-all outline-none bg-elevated text-ink placeholder:text-ink-subtle"
-          :aria-label="'Buscar anime por nombre'"
-          data-main-anime-search="true"
-          @input="handleSearch"
-        />
-        <svg class="absolute left-3 top-3.5 w-5 h-5 text-ink-subtle" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-        </svg>
+    <div class="bg-elevated rounded-card shadow-card p-3 sm:p-4">
+      <div class="relative mx-auto w-full max-w-[780px]">
+        <form
+          class="search-shell group relative mx-auto flex w-full items-center overflow-hidden rounded-full border bg-elevated/80 backdrop-blur-sm transition-all"
+          :class="[
+            isFocused ? 'border-accent/50 shadow-[0_14px_40px_-18px_rgba(124,58,237,0.6)]' : 'border-border-subtle',
+            isAnimating ? 'search-shell-burst' : ''
+          ]"
+          @submit.prevent="handleSubmit"
+          @mousemove="handleMouseMove"
+          @click="handleClick"
+        >
+          <div class="search-orb pointer-events-none" :style="orbStyle" />
+
+          <button
+            type="button"
+            class="z-10 pl-4 text-ink-subtle transition-colors group-hover:text-accent"
+            aria-label="Enfocar búsqueda"
+            @click="focusSearchInput"
+          >
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </button>
+
+          <input
+            ref="searchInputRef"
+            v-model="searchQuery"
+            type="text"
+            placeholder="Buscar anime por nombre..."
+            class="z-10 w-full bg-transparent px-3 py-3 text-[15px] text-ink outline-none placeholder:text-ink-subtle/80"
+            :aria-label="'Buscar anime por nombre'"
+            data-main-anime-search="true"
+            @input="handleSearch"
+            @focus="isFocused = true"
+            @blur="handleBlur"
+          />
+
+          <button
+            v-if="searchQuery.trim()"
+            type="submit"
+            class="z-10 mr-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white shadow-sm transition-transform hover:scale-[1.03]"
+            aria-label="Ejecutar búsqueda"
+          >
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </button>
+        </form>
+
+        <Transition name="search-suggest">
+          <div
+            v-if="showSuggestions"
+            class="absolute left-0 right-0 top-[calc(100%+0.45rem)] z-30 overflow-hidden rounded-xl border border-border-subtle bg-elevated/95 shadow-card-lg backdrop-blur-md"
+          >
+            <ul class="max-h-64 overflow-auto p-1.5">
+              <li v-for="(suggestion, idx) in suggestions" :key="`${suggestion}-${idx}`">
+                <button
+                  type="button"
+                  class="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm text-ink transition-colors hover:bg-accent-muted/45"
+                  @mousedown.prevent="selectSuggestion(suggestion)"
+                >
+                  <span class="h-2.5 w-2.5 rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500" />
+                  <span class="truncate">{{ suggestion }}</span>
+                </button>
+              </li>
+            </ul>
+          </div>
+        </Transition>
       </div>
 
-      <!-- Fila 2: filtros (secundarios, wrap en desktop) -->
-      <div class="mt-3 flex flex-wrap items-end gap-2 sm:gap-3">
-        <select
-          v-model="filters.estado"
-          class="min-w-[10rem] flex-1 sm:flex-none px-3 sm:px-4 py-2.5 sm:py-3 border-2 border-border-subtle rounded-card focus:ring-2 focus:ring-accent-ring focus:border-accent outline-none bg-elevated text-ink text-sm sm:text-base"
-          aria-label="Filtrar por estado"
-          @change="handleFilterChange"
-        >
-          <option value="">Todos los estados</option>
-          <option v-for="estado in estados" :key="estado" :value="estado">{{ estado }}</option>
-        </select>
+      <div class="mt-3 flex flex-wrap items-end justify-center gap-2 sm:gap-3">
+        <div ref="estadoDropdownRef" class="relative min-w-[10rem] w-[min(100%,20rem)] shrink-0">
+          <button
+            type="button"
+            class="custom-select-btn"
+            :class="openDropdown === 'estado' ? 'border-accent/60 ring-2 ring-accent-ring/70' : 'border-border-subtle'"
+            aria-label="Filtrar por estado"
+            :aria-expanded="openDropdown === 'estado'"
+            @click="toggleDropdown('estado')"
+          >
+            <span class="truncate">{{ selectedEstadoLabel }}</span>
+            <svg class="h-4 w-4 shrink-0 transition-transform" :class="openDropdown === 'estado' ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          <Transition name="select-pop">
+            <ul v-if="openDropdown === 'estado'" class="custom-select-menu">
+              <li v-for="option in estadoOptions" :key="option.value">
+                <button
+                  type="button"
+                  class="custom-select-option"
+                  :class="filters.estado === option.value ? 'custom-select-option--active' : ''"
+                  @click="setFilterValue('estado', option.value)"
+                >
+                  {{ option.label }}
+                </button>
+              </li>
+            </ul>
+          </Transition>
+        </div>
 
-        <select
-          v-model="filters.temporada"
-          class="min-w-[10rem] flex-1 sm:flex-none px-3 sm:px-4 py-2.5 sm:py-3 border-2 border-border-subtle rounded-card focus:ring-2 focus:ring-accent-ring focus:border-accent outline-none bg-elevated text-ink text-sm sm:text-base"
-          aria-label="Filtrar por temporada"
-          @change="handleFilterChange"
-        >
-          <option value="">Todas las temporadas</option>
-          <option v-for="temp in temporadas" :key="temp" :value="temp">{{ temp }}</option>
-        </select>
+        <div ref="temporadaDropdownRef" class="relative min-w-[10rem] w-[min(100%,20rem)] shrink-0">
+          <button
+            type="button"
+            class="custom-select-btn"
+            :class="openDropdown === 'temporada' ? 'border-accent/60 ring-2 ring-accent-ring/70' : 'border-border-subtle'"
+            aria-label="Filtrar por temporada"
+            :aria-expanded="openDropdown === 'temporada'"
+            @click="toggleDropdown('temporada')"
+          >
+            <span class="truncate">{{ selectedTemporadaLabel }}</span>
+            <svg class="h-4 w-4 shrink-0 transition-transform" :class="openDropdown === 'temporada' ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          <Transition name="select-pop">
+            <ul v-if="openDropdown === 'temporada'" class="custom-select-menu">
+              <li v-for="option in temporadaOptions" :key="option.value">
+                <button
+                  type="button"
+                  class="custom-select-option"
+                  :class="filters.temporada === option.value ? 'custom-select-option--active' : ''"
+                  @click="setFilterValue('temporada', option.value)"
+                >
+                  {{ option.label }}
+                </button>
+              </li>
+            </ul>
+          </Transition>
+        </div>
 
-        <select
-          v-model="filters.sortBy"
-          class="min-w-[11rem] flex-1 sm:flex-[1_1_12rem] px-3 sm:px-4 py-2.5 sm:py-3 border-2 border-border-subtle rounded-card focus:ring-2 focus:ring-accent-ring focus:border-accent outline-none bg-elevated text-ink text-sm sm:text-base"
-          aria-label="Ordenar resultados"
-          @change="handleFilterChange"
-        >
-          <option value="">Sin ordenar</option>
-          <option value="nombre-asc">Nombre (A-Z)</option>
-          <option value="nombre-desc">Nombre (Z-A)</option>
-          <option value="fecha-desc">Más recientes</option>
-          <option value="fecha-asc">Más antiguos</option>
-          <option value="actualizado-desc">Última actualización</option>
-          <option value="fecha-estreno-asc">Fecha estreno (próximos)</option>
-          <option value="fecha-estreno-desc">Fecha estreno (pasados)</option>
-        </select>
-
-        <button
-          type="button"
-          class="px-4 py-2.5 sm:py-3 bg-accent-muted hover:bg-accent-subtle text-accent rounded-card font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-accent-ring flex items-center gap-2 shrink-0"
-          aria-label="Filtros avanzados"
-          @click="showAdvanced = !showAdvanced"
-        >
-          <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-          </svg>
-          <span class="hidden sm:inline">Avanzado</span>
-        </button>
+        <div ref="sortDropdownRef" class="relative min-w-[11rem] w-[min(100%,24rem)] shrink-0">
+          <button
+            type="button"
+            class="custom-select-btn"
+            :class="openDropdown === 'sortBy' ? 'border-accent/60 ring-2 ring-accent-ring/70' : 'border-border-subtle'"
+            aria-label="Ordenar resultados"
+            :aria-expanded="openDropdown === 'sortBy'"
+            @click="toggleDropdown('sortBy')"
+          >
+            <span class="truncate">{{ selectedSortLabel }}</span>
+            <svg class="h-4 w-4 shrink-0 transition-transform" :class="openDropdown === 'sortBy' ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          <Transition name="select-pop">
+            <ul v-if="openDropdown === 'sortBy'" class="custom-select-menu">
+              <li v-for="option in sortOptions" :key="option.value">
+                <button
+                  type="button"
+                  class="custom-select-option"
+                  :class="filters.sortBy === option.value ? 'custom-select-option--active' : ''"
+                  @click="setFilterValue('sortBy', option.value)"
+                >
+                  {{ option.label }}
+                </button>
+              </li>
+            </ul>
+          </Transition>
+        </div>
 
         <button
           v-if="hasActiveFilters"
           type="button"
-          class="px-4 py-2.5 sm:py-3 bg-surface-muted hover:bg-border-subtle text-ink-muted rounded-card font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-border-strong shrink-0"
+          class="shrink-0 rounded-card bg-surface-muted px-4 py-2.5 text-ink-muted transition-colors hover:bg-border-subtle focus:outline-none focus:ring-2 focus:ring-border-strong sm:py-3"
           aria-label="Limpiar filtros"
           @click="clearFilters"
         >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
       </div>
 
-      <!-- Filtros Avanzados (expandible) -->
-      <Transition name="slide-down">
-        <div v-if="showAdvanced" class="mt-4 pt-4 border-t border-border-subtle">
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            <div>
-              <label class="block text-xs font-semibold text-ink mb-2">Año</label>
-              <input
-                v-model.number="filters.año"
-                type="number"
-                placeholder="Ej: 2024"
-                class="w-full px-3 py-2 border-2 border-border-subtle rounded-lg focus:ring-2 focus:ring-accent-ring focus:border-accent outline-none text-sm bg-elevated text-ink"
-                @input="handleFilterChange"
-              />
-            </div>
-
-            <div>
-              <label class="block text-xs font-semibold text-ink mb-2">Episodios (mín)</label>
-              <input
-                v-model.number="filters.episodiosMin"
-                type="number"
-                placeholder="Ej: 12"
-                class="w-full px-3 py-2 border-2 border-border-subtle rounded-lg focus:ring-2 focus:ring-accent-ring focus:border-accent outline-none text-sm bg-elevated text-ink"
-                @input="handleFilterChange"
-              />
-            </div>
-
-            <div>
-              <label class="block text-xs font-semibold text-ink mb-2">Estreno desde</label>
-              <input
-                v-model="filters.fechaDesde"
-                type="date"
-                class="w-full px-3 py-2 border-2 border-border-subtle rounded-lg focus:ring-2 focus:ring-accent-ring focus:border-accent outline-none text-sm bg-elevated text-ink"
-                @change="handleFilterChange"
-              />
-            </div>
-
-            <div>
-              <label class="block text-xs font-semibold text-ink mb-2">Estreno hasta</label>
-              <input
-                v-model="filters.fechaHasta"
-                type="date"
-                class="w-full px-3 py-2 border-2 border-border-subtle rounded-lg focus:ring-2 focus:ring-accent-ring focus:border-accent outline-none text-sm bg-elevated text-ink"
-                @change="handleFilterChange"
-              />
-            </div>
-          </div>
-
-          <div class="mt-4 flex flex-wrap items-center justify-between gap-2">
-            <div class="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                class="px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-sm font-medium hover:bg-emerald-100 transition-colors"
-                @click="saveFilterPreset"
-              >
-                Guardar filtros
-              </button>
-              <select
-                v-if="savedFilters.length > 0"
-                v-model="selectedPreset"
-                class="px-3 py-1.5 border-2 border-border-subtle rounded-lg text-sm focus:ring-2 focus:ring-accent-ring outline-none bg-elevated text-ink"
-                @change="loadFilterPreset"
-              >
-                <option value="">Filtros guardados...</option>
-                <option v-for="preset in savedFilters" :key="preset.id" :value="preset.id">
-                  {{ preset.name }}
-                </option>
-              </select>
-            </div>
-            <button
-              v-if="selectedPreset"
-              type="button"
-              class="px-3 py-1.5 bg-danger-muted text-danger rounded-lg text-sm font-medium hover:bg-red-100 transition-colors"
-              @click="deleteFilterPreset"
-            >
-              Eliminar preset
-            </button>
-          </div>
-        </div>
-      </Transition>
-
-      <div v-if="searchQuery || hasActiveFilters" class="mt-3 text-sm text-ink-muted">
-        <span v-if="isGlobalSearch" class="text-accent font-semibold">Búsqueda global:</span>
+      <div v-if="hasActiveFilters" class="mt-3 text-sm text-ink-muted">
+        <span v-if="isGlobalSearch" class="font-semibold text-accent">Búsqueda global:</span>
         Mostrando {{ filteredCount }} de {{ totalCount }} animes
       </div>
     </div>
@@ -173,12 +187,16 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { setMainSearchFocusHandler } from '../../utils/searchFocusBridge'
 
-defineProps({
+const props = defineProps({
   estados: {
     type: Array,
     default: () => []
   },
   temporadas: {
+    type: Array,
+    default: () => []
+  },
+  animeTitles: {
     type: Array,
     default: () => []
   },
@@ -199,104 +217,104 @@ defineProps({
 const emit = defineEmits(['update:filters', 'update:search'])
 
 const searchInputRef = ref(null)
+const estadoDropdownRef = ref(null)
+const temporadaDropdownRef = ref(null)
+const sortDropdownRef = ref(null)
 const searchQuery = ref('')
-const showAdvanced = ref(false)
-const selectedPreset = ref('')
-const savedFilters = ref([])
+const isFocused = ref(false)
+const isAnimating = ref(false)
+const mousePosition = ref({ x: 50, y: 50 })
+const openDropdown = ref(null)
 
 const filters = ref({
   estado: '',
   temporada: '',
-  sortBy: '',
-  año: null,
-  episodiosMin: null,
-  fechaDesde: '',
-  fechaHasta: ''
+  sortBy: ''
 })
 
 let searchTimeout = null
+let blurTimeout = null
 
-const loadSavedFilters = () => {
-  try {
-    const stored = localStorage.getItem('anime_filter_presets')
-    if (stored) {
-      savedFilters.value = JSON.parse(stored)
-    }
-  } catch (error) {
-    console.error('Error cargando filtros guardados:', error)
-  }
-}
+const suggestions = computed(() => {
+  const q = searchQuery.value.trim().toLowerCase()
+  if (!q) return []
+  const pool = Array.isArray(props.animeTitles) ? props.animeTitles : []
+  return [...new Set(pool)]
+    .filter((title) => String(title).toLowerCase().includes(q))
+    .slice(0, 8)
+})
 
-const saveSavedFilters = () => {
-  try {
-    localStorage.setItem('anime_filter_presets', JSON.stringify(savedFilters.value))
-  } catch (error) {
-    console.error('Error guardando filtros:', error)
-  }
-}
+const showSuggestions = computed(() => isFocused.value && suggestions.value.length > 0)
 
-const saveFilterPreset = () => {
-  const name = prompt('Nombre del preset de filtros:')
-  if (!name) return
+const estadoOptions = computed(() => [
+  { label: 'Todos los estados', value: '' },
+  ...(props.estados || []).map((value) => ({ label: value, value }))
+])
 
-  const preset = {
-    id: Date.now(),
-    name,
-    filters: { ...filters.value },
-    searchQuery: searchQuery.value
-  }
+const temporadaOptions = computed(() => [
+  { label: 'Todas las temporadas', value: '' },
+  ...(props.temporadas || []).map((value) => ({ label: value, value }))
+])
 
-  savedFilters.value.push(preset)
-  saveSavedFilters()
-  selectedPreset.value = preset.id
-}
+const sortOptions = [
+  { label: 'Sin ordenar', value: '' },
+  { label: 'Nombre (A-Z)', value: 'nombre-asc' },
+  { label: 'Nombre (Z-A)', value: 'nombre-desc' },
+  { label: 'Más recientes', value: 'fecha-desc' },
+  { label: 'Más antiguos', value: 'fecha-asc' },
+  { label: 'Última actualización', value: 'actualizado-desc' },
+  { label: 'Fecha estreno (próximos)', value: 'fecha-estreno-asc' },
+  { label: 'Fecha estreno (pasados)', value: 'fecha-estreno-desc' }
+]
 
-const loadFilterPreset = () => {
-  if (!selectedPreset.value) return
-
-  const preset = savedFilters.value.find(p => p.id === selectedPreset.value)
-  if (preset) {
-    filters.value = { ...preset.filters }
-    searchQuery.value = preset.searchQuery || ''
-    handleFilterChange()
-    handleSearch()
-  }
-}
-
-const deleteFilterPreset = () => {
-  if (!selectedPreset.value) return
-  if (!confirm('¿Eliminar este preset de filtros?')) return
-
-  savedFilters.value = savedFilters.value.filter(p => p.id !== selectedPreset.value)
-  saveSavedFilters()
-  selectedPreset.value = ''
-}
-
-loadSavedFilters()
+const selectedEstadoLabel = computed(
+  () => estadoOptions.value.find((opt) => opt.value === filters.value.estado)?.label || 'Todos los estados'
+)
+const selectedTemporadaLabel = computed(
+  () => temporadaOptions.value.find((opt) => opt.value === filters.value.temporada)?.label || 'Todas las temporadas'
+)
+const selectedSortLabel = computed(
+  () => sortOptions.find((opt) => opt.value === filters.value.sortBy)?.label || 'Sin ordenar'
+)
 
 const hasActiveFilters = computed(() => {
   return searchQuery.value.trim() ||
          filters.value.estado ||
          filters.value.temporada ||
-         filters.value.sortBy ||
-         filters.value.año ||
-         filters.value.episodiosMin ||
-         filters.value.fechaDesde ||
-         filters.value.fechaHasta
+         filters.value.sortBy
 })
 
-const handleSearch = () => {
-  if (searchTimeout) {
-    clearTimeout(searchTimeout)
-  }
+const orbStyle = computed(() => ({
+  left: `${mousePosition.value.x}%`,
+  top: `${mousePosition.value.y}%`
+}))
 
-  searchTimeout = setTimeout(() => {
-    emit('update:search', searchQuery.value.trim())
-  }, 300)
+const emitSearch = (value) => {
+  emit('update:search', value.trim())
+}
+
+const handleSearch = () => {
+  if (searchTimeout) clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => emitSearch(searchQuery.value), 220)
+}
+
+const handleSubmit = () => {
+  emitSearch(searchQuery.value)
+  if (!searchQuery.value.trim()) return
+  isAnimating.value = true
+  setTimeout(() => {
+    isAnimating.value = false
+  }, 700)
 }
 
 const handleFilterChange = () => {
   emit('update:filters', { ...filters.value })
+}
+
+const selectSuggestion = (value) => {
+  searchQuery.value = value
+  emitSearch(value)
+  isFocused.value = false
 }
 
 const clearFilters = () => {
@@ -304,15 +322,45 @@ const clearFilters = () => {
   filters.value = {
     estado: '',
     temporada: '',
-    sortBy: '',
-    año: null,
-    episodiosMin: null,
-    fechaDesde: '',
-    fechaHasta: ''
+    sortBy: ''
   }
-  selectedPreset.value = ''
+  openDropdown.value = null
   emit('update:search', '')
   emit('update:filters', { ...filters.value })
+}
+
+const toggleDropdown = (name) => {
+  openDropdown.value = openDropdown.value === name ? null : name
+}
+
+const setFilterValue = (key, value) => {
+  filters.value[key] = value
+  openDropdown.value = null
+  handleFilterChange()
+}
+
+const handleMouseMove = (event) => {
+  const rect = event.currentTarget.getBoundingClientRect()
+  if (!rect.width || !rect.height) return
+  mousePosition.value = {
+    x: Math.max(0, Math.min(100, ((event.clientX - rect.left) / rect.width) * 100)),
+    y: Math.max(0, Math.min(100, ((event.clientY - rect.top) / rect.height) * 100))
+  }
+}
+
+const handleClick = (event) => {
+  handleMouseMove(event)
+  isAnimating.value = true
+  setTimeout(() => {
+    isAnimating.value = false
+  }, 600)
+}
+
+const handleBlur = () => {
+  if (blurTimeout) clearTimeout(blurTimeout)
+  blurTimeout = setTimeout(() => {
+    isFocused.value = false
+  }, 160)
 }
 
 function focusSearchInput() {
@@ -323,18 +371,190 @@ function focusSearchInput() {
   }
 }
 
+const handleDocumentClick = (event) => {
+  const target = event.target
+  if (
+    estadoDropdownRef.value?.contains(target) ||
+    temporadaDropdownRef.value?.contains(target) ||
+    sortDropdownRef.value?.contains(target)
+  ) {
+    return
+  }
+  openDropdown.value = null
+}
+
 onMounted(() => {
   setMainSearchFocusHandler(focusSearchInput)
+  document.addEventListener('click', handleDocumentClick)
 })
 
 onUnmounted(() => {
   setMainSearchFocusHandler(null)
-  if (searchTimeout) {
-    clearTimeout(searchTimeout)
-  }
+  document.removeEventListener('click', handleDocumentClick)
+  if (searchTimeout) clearTimeout(searchTimeout)
+  if (blurTimeout) clearTimeout(blurTimeout)
 })
 
 defineExpose({
   focusSearch: focusSearchInput
 })
 </script>
+
+<style scoped>
+.search-shell {
+  min-height: 50px;
+}
+
+.search-shell::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 9999px;
+  background: linear-gradient(120deg, rgb(124 58 237 / 0.45), rgb(217 70 239 / 0.35), rgb(59 130 246 / 0.25));
+  opacity: 0;
+  transition: opacity 0.22s ease;
+}
+
+.search-shell:focus-within::before {
+  opacity: 1;
+}
+
+.search-orb {
+  position: absolute;
+  width: 170px;
+  height: 170px;
+  transform: translate(-50%, -50%);
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgb(139 92 246 / 0.24) 0%, rgb(139 92 246 / 0) 70%);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.search-shell:focus-within .search-orb {
+  opacity: 1;
+}
+
+.search-shell-burst {
+  animation: search-burst 0.55s ease;
+}
+
+@keyframes search-burst {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.015); }
+  100% { transform: scale(1); }
+}
+
+.search-suggest-enter-active,
+.search-suggest-leave-active {
+  transition: all 0.18s ease;
+}
+
+.search-suggest-enter-from,
+.search-suggest-leave-to {
+  opacity: 0;
+  transform: translateY(-6px) scale(0.985);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .search-shell-burst {
+    animation: none;
+  }
+
+  .search-suggest-enter-active,
+  .search-suggest-leave-active {
+    transition: opacity 0.12s ease;
+  }
+
+  .search-suggest-enter-from,
+  .search-suggest-leave-to {
+    transform: none;
+  }
+}
+
+.custom-select-btn {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  border-width: 1px;
+  background: rgb(255 255 255 / 0.78);
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  color: rgb(31 41 55);
+  box-shadow: 0 2px 10px -8px rgb(15 23 42 / 0.45);
+  backdrop-filter: blur(6px);
+  transition: all 0.2s ease;
+}
+
+:global(.dark) .custom-select-btn {
+  background: rgb(30 41 59 / 0.72);
+  color: rgb(241 245 249);
+}
+
+.custom-select-menu {
+  position: absolute;
+  z-index: 25;
+  margin-top: 0.35rem;
+  max-height: 16rem;
+  width: 100%;
+  overflow: auto;
+  border-radius: 0.95rem;
+  border: 1px solid rgb(148 163 184 / 0.26);
+  background: rgb(255 255 255 / 0.95);
+  padding: 0.35rem;
+  box-shadow: 0 14px 40px -22px rgb(15 23 42 / 0.45);
+  backdrop-filter: blur(8px);
+}
+
+:global(.dark) .custom-select-menu {
+  border-color: rgb(148 163 184 / 0.25);
+  background: rgb(15 23 42 / 0.9);
+}
+
+.custom-select-option {
+  width: 100%;
+  border-radius: 0.65rem;
+  padding: 0.45rem 0.65rem;
+  text-align: left;
+  font-size: 0.83rem;
+  color: rgb(51 65 85);
+  transition: all 0.16s ease;
+}
+
+.custom-select-option:hover {
+  background: rgb(139 92 246 / 0.12);
+  color: rgb(91 33 182);
+}
+
+:global(.dark) .custom-select-option {
+  color: rgb(226 232 240);
+}
+
+:global(.dark) .custom-select-option:hover {
+  background: rgb(139 92 246 / 0.22);
+  color: rgb(233 213 255);
+}
+
+.custom-select-option--active {
+  background: linear-gradient(90deg, rgb(124 58 237 / 0.2), rgb(217 70 239 / 0.17));
+  color: rgb(91 33 182);
+  font-weight: 700;
+}
+
+:global(.dark) .custom-select-option--active {
+  color: rgb(233 213 255);
+}
+
+.select-pop-enter-active,
+.select-pop-leave-active {
+  transition: all 0.16s ease;
+}
+
+.select-pop-enter-from,
+.select-pop-leave-to {
+  opacity: 0;
+  transform: translateY(-5px) scale(0.985);
+}
+</style>

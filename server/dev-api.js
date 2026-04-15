@@ -17,6 +17,13 @@ import {
   createLoginPayload,
   parseSessionDays
 } from '../lib/auth-server.js'
+import {
+  createAnimeSecure,
+  deleteAnimeSecure,
+  getDataServerConfig,
+  updateAnimeSecure,
+  updateConfiguracionSecure
+} from '../lib/data-server.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -133,6 +140,59 @@ app.post('/api/auth', async (req, res) => {
       error: 'Internal server error',
       message: error.message,
       details: isDev ? error.stack : undefined
+    })
+  }
+})
+
+app.post('/api/data', async (req, res) => {
+  try {
+    const auth = req.headers?.authorization || ''
+    const token = auth.startsWith('Bearer ') ? auth.slice('Bearer '.length).trim() : ''
+    if (!token) {
+      return res.status(401).json({ error: 'Unauthorized: token requerido' })
+    }
+
+    const payload = await verifyJwtToken(token, JWT_SECRET)
+    if (!payload?.authenticated) {
+      return res.status(401).json({ error: 'Unauthorized: token inválido o expirado' })
+    }
+
+    const cfg = getDataServerConfig(process.env)
+    if (!cfg.supabaseUrl || !cfg.serviceRoleKey) {
+      return res.status(500).json({
+        error: 'Server configuration error',
+        hint: 'Faltan SUPABASE_URL y/o SUPABASE_SERVICE_ROLE_KEY'
+      })
+    }
+
+    const body = req.body || {}
+    const { action } = body
+
+    if (action === 'createAnime') {
+      const created = await createAnimeSecure(cfg, body.payload || {})
+      return res.status(200).json({ success: true, data: created })
+    }
+
+    if (action === 'updateAnime') {
+      const updated = await updateAnimeSecure(cfg, body.id, body.payload || {})
+      return res.status(200).json({ success: true, data: updated })
+    }
+
+    if (action === 'deleteAnime') {
+      await deleteAnimeSecure(cfg, body.id)
+      return res.status(200).json({ success: true })
+    }
+
+    if (action === 'updateConfiguracion') {
+      const out = await updateConfiguracionSecure(cfg, body.payload || {})
+      return res.status(200).json({ success: true, data: out })
+    }
+
+    return res.status(400).json({ error: 'Invalid action' })
+  } catch (error) {
+    return res.status(error.status || 500).json({
+      error: error.message || 'Internal server error',
+      details: isDev ? error.details || null : undefined
     })
   }
 })

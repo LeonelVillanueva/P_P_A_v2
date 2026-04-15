@@ -3,55 +3,55 @@
     <Transition name="fade">
       <div
         v-if="show"
-        class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40"
+        class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
         role="dialog"
         aria-modal="true"
         aria-labelledby="shortcuts-help-title"
         @click.self="$emit('close')"
       >
         <div
-          class="bg-white rounded-2xl shadow-2xl max-w-md w-full border border-gray-200 overflow-hidden"
+          class="max-h-[85vh] w-full max-w-md overflow-hidden rounded-2xl border border-border-subtle bg-elevated shadow-2xl"
           @click.stop
         >
-          <div class="px-5 py-4 border-b border-gray-200 flex justify-between items-center">
-            <h2 id="shortcuts-help-title" class="text-lg font-semibold text-gray-900">
+          <div class="flex items-center justify-between gap-2 border-b border-border-subtle bg-surface-muted/90 px-5 py-4">
+            <h2 id="shortcuts-help-title" class="font-display text-lg font-semibold text-ink">
               Atajos de teclado
             </h2>
             <button
               type="button"
-              class="p-2 rounded-lg text-gray-500 hover:bg-gray-100"
+              class="rounded-lg p-2 text-ink-muted transition-colors hover:bg-surface-muted hover:text-ink"
               aria-label="Cerrar"
               @click="$emit('close')"
             >
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
-          <ul class="px-5 py-4 space-y-3 text-sm text-gray-700 max-h-[70vh] overflow-y-auto">
+          <ul class="max-h-[70vh] space-y-3 overflow-y-auto px-5 py-4 text-sm text-ink">
             <li class="flex justify-between gap-4">
               <span>Comandos rápidos (paleta)</span>
-              <kbd class="shrink-0 px-2 py-0.5 bg-gray-100 rounded border border-gray-300 text-xs">Ctrl+K</kbd>
+              <kbd class="shrink-0 rounded border border-border-subtle bg-surface-muted px-2 py-0.5 text-xs text-ink">Ctrl+K</kbd>
             </li>
             <li class="flex justify-between gap-4">
               <span>Nuevo anime</span>
-              <kbd class="shrink-0 px-2 py-0.5 bg-gray-100 rounded border border-gray-300 text-xs">Ctrl+N</kbd>
+              <kbd class="shrink-0 rounded border border-border-subtle bg-surface-muted px-2 py-0.5 text-xs text-ink">Ctrl+N</kbd>
             </li>
             <li class="flex justify-between gap-4">
               <span>Configuración</span>
-              <kbd class="shrink-0 px-2 py-0.5 bg-gray-100 rounded border border-gray-300 text-xs">Ctrl+,</kbd>
+              <kbd class="shrink-0 rounded border border-border-subtle bg-surface-muted px-2 py-0.5 text-xs text-ink">Ctrl+,</kbd>
             </li>
             <li class="flex justify-between gap-4">
               <span>Mostrar u ocultar estadísticas (en Inicio)</span>
-              <kbd class="shrink-0 px-2 py-0.5 bg-gray-100 rounded border border-gray-300 text-xs">Ctrl+/</kbd>
+              <kbd class="shrink-0 rounded border border-border-subtle bg-surface-muted px-2 py-0.5 text-xs text-ink">Ctrl+/</kbd>
             </li>
             <li class="flex justify-between gap-4">
               <span>Historial de actividad</span>
-              <kbd class="shrink-0 px-2 py-0.5 bg-gray-100 rounded border border-gray-300 text-xs">Ctrl+H</kbd>
+              <kbd class="shrink-0 rounded border border-border-subtle bg-surface-muted px-2 py-0.5 text-xs text-ink">Ctrl+H</kbd>
             </li>
             <li class="flex justify-between gap-4">
               <span>Cerrar paleta o historial</span>
-              <kbd class="shrink-0 px-2 py-0.5 bg-gray-100 rounded border border-gray-300 text-xs">Esc</kbd>
+              <kbd class="shrink-0 rounded border border-border-subtle bg-surface-muted px-2 py-0.5 text-xs text-ink">Esc</kbd>
             </li>
           </ul>
         </div>

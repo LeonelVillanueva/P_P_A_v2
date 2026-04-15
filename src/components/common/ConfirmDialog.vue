@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <Transition name="modal">
     <div 
       v-if="show" 
@@ -13,12 +13,12 @@
     >
       <div 
         ref="modalContentRef"
-        class="bg-white rounded-2xl shadow-2xl max-w-md w-full border-2 border-gray-200"
+        class="modal-dialog-shell bg-elevated max-w-md w-full rounded-2xl border border-border-subtle shadow-2xl"
         @mousedown.stop
         @mouseup.stop
       >
         <!-- Header -->
-        <div class="p-6 border-b border-gray-200">
+        <div class="border-b border-border-subtle p-6">
           <div class="flex items-center space-x-3">
             <div 
               class="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center"
@@ -41,7 +41,7 @@
                 />
               </svg>
             </div>
-            <h2 id="confirm-title" class="text-xl font-bold text-gray-800">
+            <h2 id="confirm-title" class="font-display text-xl font-semibold text-ink">
               {{ title }}
             </h2>
           </div>
@@ -49,14 +49,14 @@
 
         <!-- Content -->
         <div class="p-6">
-          <p id="confirm-description" class="text-gray-600 mb-6">
+          <p id="confirm-description" class="mb-6 text-ink-muted">
             {{ message }}
           </p>
 
           <!-- Actions -->
-          <div class="flex space-x-3 justify-end">
+          <div class="flex justify-end space-x-3">
             <button
-              class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+              class="rounded-lg bg-surface-muted px-4 py-2 font-medium text-ink transition-colors hover:bg-border-subtle focus:outline-none focus:ring-2 focus:ring-accent/25"
               @click="$emit('cancel')"
             >
               {{ cancelText }}
@@ -176,13 +176,13 @@ onUnmounted(() => {
   opacity: 0;
 }
 
-.modal-enter-active .bg-white,
-.modal-leave-active .bg-white {
+.modal-enter-active .modal-dialog-shell,
+.modal-leave-active .modal-dialog-shell {
   transition: transform 0.3s ease, opacity 0.3s ease;
 }
 
-.modal-enter-from .bg-white,
-.modal-leave-to .bg-white {
+.modal-enter-from .modal-dialog-shell,
+.modal-leave-to .modal-dialog-shell {
   transform: scale(0.95);
   opacity: 0;
 }

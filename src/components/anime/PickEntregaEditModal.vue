@@ -10,31 +10,31 @@
       >
         <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" @click="$emit('close')" />
         <div
-          class="relative w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl"
+          class="relative w-full max-w-md overflow-hidden rounded-2xl border border-border-subtle bg-elevated shadow-2xl"
           @click.stop
         >
-          <div class="border-b border-gray-100 px-4 py-3 sm:px-5">
-            <h2 id="pick-entrega-title" class="text-lg font-bold text-gray-900">
+          <div class="border-b border-border-subtle px-4 py-3 sm:px-5">
+            <h2 id="pick-entrega-title" class="font-display text-lg font-semibold text-ink">
               ¿Qué entrega quieres editar?
             </h2>
-            <p class="mt-1 text-xs text-gray-500 line-clamp-2">{{ serie.titulo_original }}</p>
+            <p class="mt-1 line-clamp-2 text-xs text-ink-muted">{{ serie.titulo_original }}</p>
           </div>
           <ul class="max-h-[min(60vh,24rem)] overflow-y-auto p-2">
             <li v-for="anime in serie.temporadas" :key="anime.id">
               <button
                 type="button"
-                class="flex w-full items-center justify-between gap-2 rounded-xl px-3 py-3 text-left text-sm text-gray-800 hover:bg-purple-50 focus:bg-purple-50 focus:outline-none"
+                class="flex w-full items-center justify-between gap-2 rounded-xl px-3 py-3 text-left text-sm text-ink transition-colors hover:bg-surface-muted focus:bg-surface-muted focus:outline-none"
                 @click="$emit('select', anime)"
               >
                 <span class="min-w-0 font-medium">{{ label(anime) }}</span>
-                <span class="shrink-0 text-xs text-gray-500">{{ anime.estado }}</span>
+                <span class="shrink-0 text-xs text-ink-muted">{{ anime.estado }}</span>
               </button>
             </li>
           </ul>
-          <div class="border-t border-gray-100 bg-gray-50 px-4 py-3">
+          <div class="border-t border-border-subtle bg-surface-muted/80 px-4 py-3">
             <button
               type="button"
-              class="w-full rounded-lg py-2 text-sm font-medium text-gray-600 hover:bg-gray-100"
+              class="w-full rounded-lg py-2 text-sm font-medium text-ink-muted transition-colors hover:bg-surface-muted hover:text-ink"
               @click="$emit('close')"
             >
               Cancelar

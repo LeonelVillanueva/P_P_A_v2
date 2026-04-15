@@ -9,6 +9,56 @@
 
 const JIKAN_BASE_URL = 'https://api.jikan.moe/v4'
 const ANILIST_API_URL = 'https://graphql.anilist.co'
+const JIKAN_TIMEOUT_MS = 12000
+
+function pickBestAniListTitle(titleObj) {
+  if (!titleObj || typeof titleObj !== 'object') return 'Sin título'
+  return titleObj.romaji || titleObj.english || titleObj.native || 'Sin título'
+}
+
+function mapAniListStatusToJikanLike(status) {
+  const map = {
+    FINISHED: 'Finished Airing',
+    RELEASING: 'Currently Airing',
+    NOT_YET_RELEASED: 'Not yet aired',
+    CANCELLED: 'Cancelled',
+    HIATUS: 'Hiatus'
+  }
+  return map[status] || status || null
+}
+
+function normalizeAniListResult(item) {
+  return {
+    id: item.id,
+    mal_id: item.id,
+    title: pickBestAniListTitle(item.title),
+    title_english: item.title?.english || null,
+    synopsis: item.description || null,
+    episodes: item.episodes || null,
+    status: mapAniListStatusToJikanLike(item.status),
+    score: typeof item.averageScore === 'number' ? Number((item.averageScore / 10).toFixed(1)) : null,
+    images: {
+      jpg: {
+        image_url: item.coverImage?.medium || item.coverImage?.large || null,
+        large_image_url: item.coverImage?.large || item.coverImage?.medium || null
+      }
+    },
+    coverImage: item.coverImage || null
+  }
+}
+
+function buildStatusError(status) {
+  const err = new Error(`Error en la búsqueda (${status})`)
+  err.status = status
+  return err
+}
+
+function withTimeout(url, options = {}, timeoutMs = JIKAN_TIMEOUT_MS) {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
+  return fetch(url, { ...options, signal: controller.signal })
+    .finally(() => clearTimeout(timeoutId))
+}
 
 /**
  * Servicio para Jikan API (MyAnimeList)
@@ -29,11 +79,16 @@ export const jikanService = {
     
     const sanitizedQuery = query.trim().slice(0, 100) // Limitar longitud
     const sanitizedLimit = Math.min(Math.max(1, parseInt(limit) || 10), 25) // Entre 1 y 25
+    const url = `${JIKAN_BASE_URL}/anime?q=${encodeURIComponent(sanitizedQuery)}&limit=${sanitizedLimit}`
     
     try {
-      const response = await fetch(
-        `${JIKAN_BASE_URL}/anime?q=${encodeURIComponent(sanitizedQuery)}&limit=${sanitizedLimit}`
-      )
+      let response = await withTimeout(url)
+
+      // Jikan puede responder 5xx de forma intermitente; reintentamos una vez.
+      if ([500, 502, 503, 504].includes(response.status)) {
+        await new Promise((resolve) => setTimeout(resolve, 450))
+        response = await withTimeout(url)
+      }
       
       if (!response.ok) {
         // Manejar errores específicos de la API
@@ -43,12 +98,17 @@ export const jikanService = {
         if (response.status === 404) {
           throw new Error('No se encontraron animes con ese nombre.')
         }
-        throw new Error(`Error en la búsqueda (${response.status})`)
+        throw buildStatusError(response.status)
       }
       
       const data = await response.json()
       return data.data || []
     } catch (error) {
+      if (error?.name === 'AbortError') {
+        const timeoutError = new Error('La búsqueda tardó demasiado. Intenta de nuevo.')
+        timeoutError.status = 504
+        throw timeoutError
+      }
       // Si ya es un Error con mensaje, re-lanzarlo
       if (error instanceof Error && error.message) {
         throw error
@@ -196,7 +256,22 @@ export const animeApiService = {
    * Buscar animes (usa Jikan API)
    */
   async search(query, limit = 10) {
-    return await jikanService.searchAnime(query, limit)
+    try {
+      return await jikanService.searchAnime(query, limit)
+    } catch (error) {
+      const status = error?.status
+      const isJikanGatewayError =
+        [500, 502, 503, 504].includes(status) ||
+        /Error en la búsqueda \((500|502|503|504)\)/.test(error?.message || '')
+
+      // Fallback transparente: si Jikan falla por gateway, intentamos AniList.
+      if (isJikanGatewayError) {
+        const anilistResults = await anilistService.searchAnime(query, limit)
+        return anilistResults.map(normalizeAniListResult)
+      }
+
+      throw error
+    }
   },
 
   /**

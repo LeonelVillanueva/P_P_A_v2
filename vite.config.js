@@ -14,6 +14,16 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     }
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vue_vendor: ['vue', 'vue-router', 'pinia'],
+          supabase_vendor: ['@supabase/supabase-js']
+        }
+      }
+    }
+  },
   server: {
     port: 5173,
     proxy: {
