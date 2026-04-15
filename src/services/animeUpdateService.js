@@ -1,6 +1,5 @@
 import { supabase } from '../config/supabase'
 import { animeApiService } from './animeApiService'
-import { animeService } from './animeService'
 
 /**
  * Servicio para actualización automática de información de animes
@@ -26,9 +25,9 @@ export const animeUpdateService = {
         ultima_verificacion: new Date().toISOString()
       }
 
-      // Actualizar nombre si está disponible
+      // Título de esta ficha en la API → entrega; la obra (titulo_original) la mantienes tú
       if (jikanData.title) {
-        updates.nombre = jikanData.title
+        updates.titulo_entrega = jikanData.title
       }
 
       // Actualizar sinopsis
@@ -46,7 +45,6 @@ export const animeUpdateService = {
         const airedDate = new Date(jikanData.aired.from)
         if (!isNaN(airedDate.getTime())) {
           updates.fecha_estreno = airedDate.toISOString().split('T')[0]
-          updates.año = airedDate.getFullYear()
         }
       }
 
@@ -60,20 +58,7 @@ export const animeUpdateService = {
         updates.generos = jikanData.genres.map(g => g.name || g)
       }
 
-      // Actualizar estado basado en el estado de emisión de Jikan
-      if (jikanData.status) {
-        // Mapear estado de Jikan a estados internos
-        const statusMap = {
-          'Currently Airing': 'Emisión',
-          'Finished Airing': 'Animes Vistos',
-          'Not yet aired': 'Estrenos',
-          'On Hold': 'En espera'
-        }
-        const mappedStatus = statusMap[jikanData.status]
-        if (mappedStatus) {
-          updates.estado = mappedStatus
-        }
-      }
+      // No sobrescribimos `estado` desde Jikan: los nombres los defines tú en Configuración.
 
       // Actualizar en la base de datos
       const { data, error } = await supabase
@@ -101,7 +86,7 @@ export const animeUpdateService = {
       // Obtener todos los animes con jikan_id
       const { data: animes, error } = await supabase
         .from('animes')
-        .select('id, jikan_id, ultima_verificacion, nombre')
+        .select('id, jikan_id, ultima_verificacion, titulo_original, titulo_entrega')
         .not('jikan_id', 'is', null)
 
       if (error) throw error
@@ -135,7 +120,7 @@ export const animeUpdateService = {
             results.skipped++
           }
         } catch (error) {
-          console.error(`Error actualizando anime ${anime.nombre}:`, error)
+          console.error(`Error actualizando anime ${anime.titulo_original}:`, error)
           results.errors++
         }
       }
@@ -166,7 +151,7 @@ export const animeUpdateService = {
       const jikanId = jikanAnime.mal_id
 
       // Actualizar el anime con el jikan_id
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('animes')
         .update({ 
           jikan_id: jikanId,

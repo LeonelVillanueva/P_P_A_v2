@@ -15,7 +15,8 @@ export function useCommandPalette() {
       { id: 'calendar', label: 'Vista de calendario', icon: '📅', action: 'calendar' },
       { id: 'stats', label: 'Estadísticas', icon: '📊', action: 'stats' },
       { id: 'config', label: 'Configuración', icon: '⚙️', action: 'config' },
-      { id: 'history', label: 'Historial de actividad', icon: '🕐', action: 'history' }
+      { id: 'history', label: 'Historial de actividad', icon: '🕐', action: 'history' },
+      { id: 'help', label: 'Ayuda y atajos de teclado', icon: '❓', action: 'help' }
     ]
 
     if (!query.value.trim()) {

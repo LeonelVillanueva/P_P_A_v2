@@ -1,6 +1,6 @@
 import { supabase } from '../config/supabase'
 import { validateImageFile, validateId } from '../utils/validators'
-import { generateSafeFileName, isValidImageOrigin } from '../utils/security'
+import { generateSafeFileName } from '../utils/security'
 
 const BUCKET_NAME = 'Imgs'
 const MAX_FILE_SIZE = 2 * 1024 * 1024 // 2MB

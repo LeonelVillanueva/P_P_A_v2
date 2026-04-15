@@ -1,245 +1,185 @@
-<template>
+﻿<template>
   <Transition name="modal">
-    <div 
-      v-if="show" 
+    <div
+      v-if="show"
       ref="overlayRef"
-      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50"
+      class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-3 sm:p-4 bg-black bg-opacity-50"
       @mousedown="handleOverlayMouseDown"
-      @mouseup="handleOverlayMouseUp"
+      @mouseup="(e) => handleOverlayMouseUp(e, { loading })"
     >
-      <div 
-        ref="modalContentRef"
-        class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] sm:max-h-[90vh] overflow-y-auto border border-gray-100 m-2 sm:m-0"
-        @mousedown.stop
-        @mouseup.stop
+      <div
+        class="my-auto flex max-h-[92vh] w-full max-w-[calc(100vw-1.5rem)] flex-col items-stretch justify-center gap-0 sm:max-w-none sm:flex-row sm:items-stretch sm:justify-center"
       >
-        <div class="sticky top-0 bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-5 flex justify-between items-center rounded-t-2xl">
-          <h2 class="text-2xl font-bold text-white flex items-center space-x-2">
-            <svg v-if="isEditing" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-            </svg>
-            <svg v-else class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-            </svg>
-            <span>{{ isEditing ? 'Editar Anime' : 'Nuevo Anime' }}</span>
-          </h2>
-          <div class="flex items-center space-x-2">
-            <button 
-              v-if="!isEditing"
-              @click="$emit('open-search')"
-              class="text-white/80 hover:text-white hover:bg-white/20 rounded-lg px-3 py-1.5 transition-all duration-200 flex items-center space-x-2 text-sm"
-              title="Buscar anime en la API"
-            >
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        <div
+          ref="modalContentRef"
+          class="bg-elevated shadow-card-lg max-w-xl w-full max-h-[92vh] flex flex-col border border-border-subtle m-1 sm:m-0"
+          :class="modalShellClass"
+          @mousedown.stop
+          @mouseup.stop
+        >
+          <div class="shrink-0 bg-gradient-to-r from-accent to-accent-hover px-4 py-4 sm:px-5 sm:py-4 flex justify-between items-center gap-2 rounded-t-2xl">
+            <h2 class="text-lg sm:text-xl font-bold text-accent-foreground flex items-center gap-2 min-w-0 font-display">
+              <svg v-if="isEditing" class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
               </svg>
-              <span>Buscar</span>
-            </button>
-            <button 
-              @click="$emit('close')"
-              class="text-white/80 hover:text-white hover:bg-white/20 rounded-lg p-1.5 transition-all duration-200"
-            >
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              <svg v-else class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
               </svg>
-            </button>
-          </div>
-        </div>
-
-        <form @submit.prevent="handleSubmit" class="p-4 sm:p-6 space-y-4 sm:space-y-6 bg-gray-50/50">
-          <!-- Imagen -->
-          <div class="bg-white rounded-xl p-5 border border-gray-200">
-            <label class="block text-sm font-semibold text-gray-700 mb-3 flex items-center space-x-2">
-              <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-              <span>Imagen de Portada</span>
-            </label>
-            <div class="flex items-center space-x-4">
-              <div v-if="formData.imagen_url || previewImage" class="w-32 h-32 rounded-xl overflow-hidden shadow-lg border-2 border-purple-200">
-                <img 
-                  :src="previewImage || formData.imagen_url" 
-                  alt="Preview"
-                  class="w-full h-full object-cover"
-                  @error="handleImageError"
-                />
-              </div>
-              <div class="flex-1">
-                <label class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-purple-300 rounded-xl cursor-pointer bg-purple-50/50 hover:bg-purple-50 transition-colors">
-                  <div class="flex flex-col items-center justify-center pt-5 pb-6">
-                    <svg class="w-10 h-10 mb-3 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                    </svg>
-                    <p class="mb-2 text-sm text-gray-500"><span class="font-semibold">Click para subir</span> o arrastra</p>
-                    <p class="text-xs text-gray-400">PNG, JPG o WEBP (MAX. 2MB)</p>
-                    <p v-if="formData.imagen_url && !previewImage" class="text-xs text-purple-600 mt-2 font-medium">
-                      ✓ Imagen de la API (se guardará como referencia)
-                    </p>
-                  </div>
-                  <input 
-                    type="file" 
-                    accept="image/*"
-                    @change="handleImageChange"
-                    class="hidden"
-                  />
-                </label>
-              </div>
-            </div>
-          </div>
-
-          <!-- Nombre -->
-          <div class="bg-white rounded-xl p-5 border border-gray-200">
-            <label class="block text-sm font-semibold text-gray-700 mb-3 flex items-center space-x-2">
-              <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-              </svg>
-              <span>Nombre del Anime <span class="text-red-500">*</span></span>
-            </label>
-            <input 
-              v-model="formData.nombre"
-              type="text"
-              required
-              class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all outline-none"
-              placeholder="Ej: Naruto, One Piece, Attack on Titan..."
-            />
-          </div>
-
-          <!-- Nombre Base (Serie) -->
-          <div class="bg-white rounded-xl p-5 border border-gray-200">
-            <label class="block text-sm font-semibold text-gray-700 mb-3 flex items-center space-x-2">
-              <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-              </svg>
-              <span>Nombre Base de la Serie</span>
-            </label>
-            <input 
-              v-model="formData.nombre_base"
-              type="text"
-              class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all outline-none"
-              placeholder="Ej: The Rising of the Shield Hero (para agrupar temporadas)"
-            />
-            <p class="text-xs text-gray-500 mt-2">Deja vacío para usar el nombre del anime. Usa el mismo nombre base para agrupar temporadas de la misma serie.</p>
-          </div>
-
-          <!-- Tipo y Número de Temporada -->
-          <div class="bg-white rounded-xl p-5 border border-gray-200 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-3 flex items-center space-x-2">
-                <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
-                </svg>
-                <span>Tipo</span>
-              </label>
-              <select 
-                v-model="formData.tipo_temporada"
-                class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all outline-none bg-white"
+              <span class="truncate">{{ isEditing ? 'Editar anime' : 'Nuevo anime' }}</span>
+            </h2>
+            <div class="flex items-center gap-1.5 shrink-0">
+              <button
+                v-if="!isEditing"
+                type="button"
+                class="text-accent-foreground/90 hover:text-accent-foreground hover:bg-white/20 rounded-lg px-2.5 py-1.5 transition-all text-sm flex items-center gap-1.5"
+                title="Buscar anime en la API"
+                @click="emit('open-search')"
               >
-                <option value="Temporada">Temporada</option>
-                <option value="Movie">Movie</option>
-                <option value="OVA">OVA</option>
-                <option value="Spin off">Spin off</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-3 flex items-center space-x-2">
-                <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
-                <span>Número de Temporada</span>
-              </label>
-              <input 
-                v-model.number="formData.temporada_numero"
-                type="number"
-                min="1"
-                class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all outline-none"
-                placeholder="1, 2, 3..."
+                <span class="hidden sm:inline">Buscar</span>
+              </button>
+              <button
+                type="button"
+                class="text-accent-foreground/90 hover:text-accent-foreground hover:bg-white/20 rounded-lg p-1.5 transition-all"
+                @click="$emit('close')"
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="shrink-0 px-3 sm:px-4 pt-3 pb-2 border-b border-border-subtle bg-surface-muted/90">
+            <div class="flex items-center justify-between gap-1 text-[10px] sm:text-xs text-ink-muted mb-1.5">
+              <span>Paso {{ currentStepDisplay }} de {{ totalSteps }}</span>
+              <span class="font-medium text-accent truncate max-w-[55%] text-right">{{ currentStepLabel }}</span>
+            </div>
+            <div class="flex gap-1" role="tablist" aria-label="Pasos del formulario">
+              <button
+                v-for="(sid, i) in stepIds"
+                :key="sid"
+                type="button"
+                role="tab"
+                :aria-selected="i === currentStepIndex"
+                :aria-current="i === currentStepIndex ? 'step' : undefined"
+                class="h-1.5 flex-1 rounded-full transition-colors min-w-0"
+                :class="i < currentStepIndex ? 'bg-accent-border' : i === currentStepIndex ? 'bg-accent' : 'bg-border-subtle'"
+                :title="stepTooltip(sid)"
+                @click="goToStepIndex(i)"
               />
             </div>
           </div>
 
-          <!-- Fecha de Estreno -->
-          <div class="bg-white rounded-xl p-5 border border-gray-200">
-            <label class="block text-sm font-semibold text-gray-700 mb-3 flex items-center space-x-2">
-              <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-              <span>Fecha de Estreno</span>
-            </label>
-            <input 
-              v-model="formData.fecha_estreno"
-              type="date"
-              class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all outline-none"
-            />
-            <p class="text-xs text-gray-500 mt-2">Si el anime aún no ha salido, esta fecha se usará para verificar cuando esté disponible.</p>
-          </div>
-
-          <!-- Estado -->
-          <div class="bg-white rounded-xl p-5 border border-gray-200">
-            <label class="block text-sm font-semibold text-gray-700 mb-3 flex items-center space-x-2">
-              <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span>Estado <span class="text-red-500">*</span></span>
-            </label>
-            <select 
-              v-model="formData.estado"
-              required
-              class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all outline-none bg-white"
-            >
-              <option value="">Selecciona un estado</option>
-              <option v-for="estado in estados" :key="estado" :value="estado">
-                {{ estado }}
-              </option>
-            </select>
-          </div>
-
-          <!-- Temporadas -->
-          <div class="bg-white rounded-xl p-5 border border-gray-200">
-            <label class="block text-sm font-semibold text-gray-700 mb-3 flex items-center space-x-2">
-              <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
-              </svg>
-              <span>Temporadas</span>
-            </label>
-            <div class="flex flex-wrap gap-3">
-              <label 
-                v-for="temp in temporadas" 
-                :key="temp"
-                class="flex items-center space-x-2 cursor-pointer px-4 py-2 rounded-lg border-2 border-gray-200 hover:border-purple-400 hover:bg-purple-50 transition-all"
-                :class="formData.temporadas.includes(temp) ? 'border-purple-500 bg-purple-50' : ''"
-              >
-                <input 
-                  type="checkbox"
-                  :value="temp"
-                  v-model="formData.temporadas"
-                  class="w-5 h-5 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
-                />
-                <span class="text-sm font-medium text-gray-700">{{ temp }}</span>
-              </label>
+          <form class="flex flex-col flex-1 min-h-0" @submit.prevent="runPrimarySubmit">
+            <div class="flex-1 overflow-y-auto px-3 sm:px-4 py-3 bg-surface-muted/50">
+              <Transition name="step" mode="out-in">
+                <div :key="currentStepId" class="space-y-3">
+                  <AnimeModalStepBasic
+                    v-if="currentStepId === 'basic'"
+                    v-model:form-data="formData"
+                    v-model:obras-list-panel-open="obrasListPanelOpen"
+                    :estados="estados"
+                    :temporadas="temporadas"
+                    :titulo-obra-field-key="tituloObraFieldKey"
+                    :step-error="stepError"
+                    :step-order="stepOrder"
+                  />
+                  <AnimeModalStepSerie
+                    v-else-if="currentStepId === 'serie'"
+                    v-model:form-data="formData"
+                    :mostrar-tipo-y-numero-temporada="mostrarTipoYNumeroTemporada"
+                    :step-order="stepOrder"
+                  />
+                  <AnimeModalStepCover
+                    v-else-if="currentStepId === 'cover'"
+                    v-model:form-data="formData"
+                    :preview-image="previewImage"
+                    :step-order="stepOrder"
+                    @image-change="handleImageChange"
+                    @image-error="handleImageError"
+                    @open-search-cover="emit('open-search', { mergeCover: true })"
+                  />
+                  <AnimeModalStepEmission
+                    v-else-if="currentStepId === 'emission'"
+                    v-model:form-data="formData"
+                    :step-order="stepOrder"
+                  />
+                  <AnimeModalStepRevision
+                    v-else-if="currentStepId === 'revision'"
+                    v-model:form-data="formData"
+                    :step-order="stepOrder"
+                    @marcar-hoy="marcarRevisionHoy"
+                  />
+                </div>
+              </Transition>
             </div>
-          </div>
 
-          <!-- Botones -->
-          <div class="flex justify-end space-x-3 pt-4 bg-white rounded-b-2xl px-6 pb-6">
-            <button 
-              type="button"
-              @click="$emit('close')"
-              class="px-6 py-3 text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-all duration-200 font-medium"
-            >
-              Cancelar
-            </button>
-            <button 
-              type="submit"
-              :disabled="loading"
-              class="px-6 py-3 text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
-            >
-              <svg v-if="!loading" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-              </svg>
-              <span>{{ loading ? 'Guardando...' : (isEditing ? 'Actualizar' : 'Crear') }}</span>
-            </button>
-          </div>
-        </form>
+            <div class="shrink-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-3 sm:px-4 py-3 border-t border-border-subtle bg-elevated rounded-b-2xl">
+              <div class="flex items-center gap-2 order-2 sm:order-1">
+                <button
+                  type="button"
+                  class="px-3 py-2 text-sm text-ink-muted hover:bg-surface-muted rounded-lg font-medium"
+                  @click="$emit('close')"
+                >
+                  Cancelar
+                </button>
+              </div>
+              <div class="flex flex-wrap items-center justify-end gap-2 order-1 sm:order-2">
+                <button
+                  v-if="!isFirstStep"
+                  type="button"
+                  class="px-3 py-2 text-sm text-ink bg-surface-muted rounded-lg hover:bg-border-subtle font-medium"
+                  @click="goPrev"
+                >
+                  Atrás
+                </button>
+                <button
+                  v-if="canSkipCurrentStep"
+                  type="button"
+                  class="px-2 py-2 text-xs sm:text-sm text-accent hover:underline font-medium"
+                  @click="skipStep"
+                >
+                  Omitir paso
+                </button>
+                <button
+                  v-if="!isLastStep"
+                  type="button"
+                  class="px-4 py-2 text-sm text-accent-foreground bg-gradient-to-r from-accent to-accent-hover rounded-lg hover:brightness-110 font-semibold shadow-card"
+                  @click="goNext"
+                >
+                  Siguiente
+                </button>
+                <button
+                  v-else
+                  type="submit"
+                  :disabled="loading"
+                  class="px-4 py-2 text-sm text-accent-foreground bg-gradient-to-r from-accent to-accent-hover rounded-lg font-semibold shadow-card disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  <svg v-if="!loading" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>{{ loading ? 'Guardando…' : (isEditing ? 'Guardar' : 'Crear') }}</span>
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <Transition name="slide-obras-panel">
+          <aside
+            v-if="obrasPanelVisible"
+            class="m-1 flex max-h-[92vh] min-h-0 w-full flex-col overflow-hidden rounded-b-2xl border border-border-subtle bg-elevated shadow-card-lg sm:m-0 sm:w-[min(92vw,26rem)] sm:shrink-0 sm:rounded-l-none sm:rounded-r-2xl sm:border-l-0 sm:border-t-0 sm:border-border-subtle"
+          >
+            <TituloObraPickerPanel
+              v-model="formData.titulo_original"
+              @picked="obrasListPanelOpen = false"
+              @close="obrasListPanelOpen = false"
+            />
+          </aside>
+        </Transition>
       </div>
     </div>
   </Transition>
@@ -248,12 +188,24 @@
 <script setup>
 import { ref, watch, computed, onMounted, onUnmounted } from 'vue'
 import { useAnimeForm } from '../../composables/useAnimeForm'
+import { useAnimeModalSteps } from '../../composables/useAnimeModalSteps'
+import { useModalOverlay } from '../../composables/useModalOverlay'
+import TituloObraPickerPanel from './TituloObraPickerPanel.vue'
+import AnimeModalStepBasic from './anime-modal/AnimeModalStepBasic.vue'
+import AnimeModalStepSerie from './anime-modal/AnimeModalStepSerie.vue'
+import AnimeModalStepCover from './anime-modal/AnimeModalStepCover.vue'
+import AnimeModalStepEmission from './anime-modal/AnimeModalStepEmission.vue'
+import AnimeModalStepRevision from './anime-modal/AnimeModalStepRevision.vue'
 
 const props = defineProps({
   show: Boolean,
-  anime: Object,
-  estados: Array,
-  temporadas: Array,
+  anime: { type: Object, default: null },
+  estados: { type: Array, default: () => [] },
+  estadosPasoSeguimiento: {
+    default: null,
+    validator: (v) => v === null || Array.isArray(v)
+  },
+  temporadas: { type: Array, default: () => [] },
   loading: Boolean,
   defaultEstado: {
     type: String,
@@ -263,80 +215,132 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'submit', 'open-search'])
 
-const overlayRef = ref(null)
 const modalContentRef = ref(null)
-const mouseDownTarget = ref(null)
+const tituloObraFieldKey = ref(0)
+const obrasListPanelOpen = ref(false)
+
+const { overlayRef, handleOverlayMouseDown, handleOverlayMouseUp } = useModalOverlay(() =>
+  emit('close')
+)
 
 const {
   formData,
   previewImage,
-  imageFile,
+  imageFile: _imageFile,
   isEditing,
   resetForm,
   handleImageChange,
+  applyExternalImageUrl,
   getFormData
 } = useAnimeForm(computed(() => props.anime))
 
-// Manejar mousedown en el overlay
-const handleOverlayMouseDown = (event) => {
-  // Guardar dónde comenzó el mousedown
-  mouseDownTarget.value = event.target
-}
+const temporadasRef = computed(() => props.temporadas)
+const estadosPasoRef = computed(() => props.estadosPasoSeguimiento)
 
-// Manejar mouseup en el overlay
-const handleOverlayMouseUp = (event) => {
-  // Solo cerrar si tanto el mousedown como el mouseup fueron en el overlay
-  // (no en el contenido del modal)
-  if (
-    mouseDownTarget.value === overlayRef.value && 
-    event.target === overlayRef.value &&
-    !props.loading
-  ) {
-    emit('close')
+const {
+  stepIds,
+  totalSteps,
+  currentStepIndex,
+  currentStepId,
+  currentStepLabel,
+  currentStepDisplay,
+  mostrarTipoYNumeroTemporada,
+  stepOrder,
+  stepTooltip,
+  isFirstStep,
+  isLastStep,
+  canSkipCurrentStep,
+  stepError,
+  goNext,
+  goPrev,
+  skipStep,
+  goToStepIndex,
+  resetStepUi,
+  runPrimarySubmit: runPrimarySubmitFromSteps
+} = useAnimeModalSteps({
+  formData,
+  temporadas: temporadasRef,
+  estadosPasoSeguimiento: estadosPasoRef
+})
+
+const obrasPanelVisible = computed(
+  () => obrasListPanelOpen.value && currentStepId.value === 'basic'
+)
+
+const modalShellClass = computed(() => {
+  if (!obrasPanelVisible.value) {
+    return 'rounded-2xl'
   }
-  // Resetear el flag
-  mouseDownTarget.value = null
+  return [
+    'rounded-t-2xl rounded-b-none border-b-0',
+    'sm:rounded-l-2xl sm:rounded-r-none sm:rounded-b-2xl sm:border-b sm:border-r-0'
+  ].join(' ')
+})
+
+function applyApiSearchResult(animeData) {
+  if (animeData?.imagen_url) {
+    applyExternalImageUrl(animeData.imagen_url)
+  }
 }
 
-watch(() => props.show, (newVal) => {
-  if (newVal) {
-    if (props.anime && props.anime.id) {
-      // Si hay un anime con ID, es edición
-      resetForm(props.anime)
-    } else if (props.anime && props.anime.estado) {
-      // Si hay un anime sin ID pero con estado, usar ese estado
-      resetForm(props.anime)
-    } else if (props.defaultEstado) {
-      // Si no hay anime pero hay estado por defecto, usar ese estado
-      resetForm({ estado: props.defaultEstado })
-    } else {
-      // Si no hay nada, resetear normalmente
-      resetForm(null)
-    }
+defineExpose({ applyApiSearchResult })
+
+const marcarRevisionHoy = () => {
+  formData.value.ultima_revision_info = new Date().toISOString().slice(0, 10)
+}
+
+function runPrimarySubmit() {
+  runPrimarySubmitFromSteps(emit, getFormData)
+}
+
+watch(currentStepId, (id) => {
+  if (id !== 'basic') {
+    obrasListPanelOpen.value = false
   }
 })
 
-// También observar cambios en props.anime
-watch(() => props.anime, (newAnime) => {
-  if (props.show && newAnime) {
-    resetForm(newAnime)
+watch(
+  () => props.show,
+  (newVal) => {
+    resetStepUi()
+    obrasListPanelOpen.value = false
+    if (newVal) {
+      tituloObraFieldKey.value += 1
+      if (props.anime && props.anime.id) {
+        resetForm(props.anime)
+      } else if (props.anime && props.anime.estado) {
+        resetForm(props.anime)
+      } else if (props.defaultEstado) {
+        resetForm({ estado: props.defaultEstado })
+      } else {
+        resetForm(null)
+      }
+    }
   }
-}, { deep: true })
+)
 
-const handleSubmit = () => {
-  emit('submit', getFormData())
-}
+watch(
+  () => props.anime,
+  (newAnime) => {
+    if (props.show && newAnime) {
+      resetForm(newAnime)
+    }
+  },
+  { deep: true }
+)
 
 const handleImageError = (event) => {
-  // Si la imagen de la API falla al cargar, mostrar placeholder
-  event.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23ddd" width="100" height="100"/%3E%3Ctext fill="%23999" font-family="sans-serif" font-size="14" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3EImagen no disponible%3C/text%3E%3C/svg%3E'
+  event.target.src =
+    'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23ddd" width="100" height="100"/%3E%3Ctext fill="%23999" font-family="sans-serif" font-size="14" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3EImagen no disponible%3C/text%3E%3C/svg%3E'
 }
 
-// Cerrar con Escape
 const handleEscape = (e) => {
-  if (e.key === 'Escape' && props.show && !props.loading) {
-    emit('close')
+  if (e.key !== 'Escape' || !props.show || props.loading) return
+  if (obrasListPanelOpen.value) {
+    obrasListPanelOpen.value = false
+    return
   }
+  emit('close')
 }
 
 onMounted(() => {
@@ -349,22 +353,54 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.modal-enter-active, .modal-leave-active {
-  transition: opacity 0.3s ease;
+.modal-enter-active,
+.modal-leave-active {
+  transition: opacity 0.25s ease;
 }
-
-.modal-enter-from, .modal-leave-to {
+.modal-enter-from,
+.modal-leave-to {
   opacity: 0;
 }
-
-.modal-enter-active .bg-white,
-.modal-leave-active .bg-white {
-  transition: transform 0.3s ease;
+.modal-enter-active .bg-elevated,
+.modal-leave-active .bg-elevated {
+  transition: transform 0.25s ease;
+}
+.modal-enter-from .bg-elevated,
+.modal-leave-to .bg-elevated {
+  transform: scale(0.96);
 }
 
-.modal-enter-from .bg-white,
-.modal-leave-to .bg-white {
-  transform: scale(0.9);
+.step-enter-active,
+.step-leave-active {
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.step-enter-from {
+  opacity: 0;
+  transform: translateX(8px);
+}
+.step-leave-to {
+  opacity: 0;
+  transform: translateX(-8px);
+}
+
+.slide-obras-panel-enter-active,
+.slide-obras-panel-leave-active {
+  transition: opacity 0.2s ease, transform 0.22s ease;
+}
+.slide-obras-panel-enter-from {
+  opacity: 0;
+  transform: translateX(1rem);
+}
+.slide-obras-panel-leave-to {
+  opacity: 0;
+  transform: translateX(0.75rem);
+}
+@media (max-width: 639px) {
+  .slide-obras-panel-enter-from {
+    transform: translateY(0.75rem);
+  }
+  .slide-obras-panel-leave-to {
+    transform: translateY(0.5rem);
+  }
 }
 </style>
-

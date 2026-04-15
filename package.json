@@ -8,6 +8,12 @@
     "dev:all": "concurrently \"npm run dev:api\" \"npm run dev\"",
     "build": "vite build",
     "preview": "vite preview",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "verify": "node scripts/verify-setup.js",
     "diagnose": "node scripts/diagnose-storage.js",
     "hash-password": "node scripts/generate-password-hash.js",
@@ -27,8 +33,15 @@
     "vue-router": "^4.6.3"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.2",
     "concurrently": "^9.2.1",
     "cors": "^2.8.5",
-    "express": "^4.22.1"
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-vue": "^10.6.2",
+    "express": "^4.22.1",
+    "globals": "^16.5.0",
+    "prettier": "^3.7.4",
+    "vitest": "^4.0.16"
   }
 }

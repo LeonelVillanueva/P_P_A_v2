@@ -1,15 +1,15 @@
-<template>
+﻿<template>
   <div class="space-y-3">
     <!-- Serie Agrupada -->
     <div
       v-for="serie in series"
-      :key="serie.nombre_base"
+      :key="serie.titulo_original"
       class="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
     >
       <!-- Header de Serie (siempre visible) -->
       <div
-        @click="toggleSerie(serie.nombre_base)"
         class="p-4 cursor-pointer flex items-center justify-between hover:bg-gray-50 transition-colors"
+        @click="toggleSerie(serie.titulo_original)"
       >
         <div class="flex items-center space-x-4 flex-1 min-w-0">
           <!-- Imagen de la serie -->
@@ -17,18 +17,18 @@
             <img
               v-if="serie.imagen_url"
               :src="serie.imagen_url"
-              :alt="serie.nombre_base"
+              :alt="serie.titulo_original"
               class="w-full h-full object-cover"
               loading="lazy"
             />
             <div v-else class="w-full h-full flex items-center justify-center">
-              <span class="text-white text-xl font-bold">{{ serie.nombre_base.charAt(0) }}</span>
+              <span class="text-white text-xl font-bold">{{ serie.titulo_original.charAt(0) }}</span>
             </div>
           </div>
 
           <!-- Información de la serie -->
           <div class="flex-1 min-w-0">
-            <h3 class="font-bold text-gray-900 text-lg truncate">{{ serie.nombre_base }}</h3>
+            <h3 class="font-bold text-gray-900 text-lg truncate">{{ serie.titulo_original }}</h3>
             <div class="flex items-center space-x-3 mt-1 flex-wrap gap-2">
               <!-- Badge de temporadas totales -->
               <span class="px-2 py-1 bg-purple-100 text-purple-700 text-xs font-semibold rounded-full">
@@ -45,30 +45,17 @@
                 {{ estado }}
               </span>
             </div>
-            
-            <!-- Resumen de temporadas -->
-            <div class="flex items-center space-x-4 mt-2 text-xs text-gray-500">
-              <span v-if="serie.temporadas_vistas > 0">
-                ✓ {{ serie.temporadas_vistas }} vista{{ serie.temporadas_vistas !== 1 ? 's' : '' }}
-              </span>
-              <span v-if="serie.temporadas_emision > 0" class="text-blue-600">
-                📺 {{ serie.temporadas_emision }} en emisión
-              </span>
-              <span v-if="serie.temporadas_estrenos > 0" class="text-green-600">
-                🆕 {{ serie.temporadas_estrenos }} estreno{{ serie.temporadas_estrenos !== 1 ? 's' : '' }}
-              </span>
-            </div>
           </div>
         </div>
 
         <!-- Botón de expandir/colapsar -->
         <button
           class="ml-4 p-2 text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0"
-          :aria-label="expandedSeries.has(serie.nombre_base) ? 'Colapsar' : 'Expandir'"
+          :aria-label="expandedSeries.has(serie.titulo_original) ? 'Colapsar' : 'Expandir'"
         >
           <svg
             class="w-5 h-5 transition-transform"
-            :class="{ 'rotate-180': expandedSeries.has(serie.nombre_base) }"
+            :class="{ 'rotate-180': expandedSeries.has(serie.titulo_original) }"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -81,18 +68,19 @@
       <!-- Temporadas (expandible) -->
       <Transition name="slide-down">
         <div
-          v-if="expandedSeries.has(serie.nombre_base)"
+          v-if="expandedSeries.has(serie.titulo_original)"
           class="border-t border-gray-100 bg-gray-50"
         >
           <div class="p-4 space-y-2">
             <div
               v-for="temporada in serie.temporadas"
               :key="temporada.id"
-              @contextmenu.prevent="handleContextMenu(temporada)"
               class="bg-white rounded-lg p-3 border border-gray-200 hover:border-purple-300 transition-colors"
+              @contextmenu.prevent="handleContextMenu(temporada)"
             >
               <div class="flex items-center justify-between">
                 <div class="flex-1 min-w-0">
+                  <p class="text-sm font-semibold text-gray-900 truncate mb-1">{{ displayEntrega(temporada) }}</p>
                   <div class="flex items-center space-x-2 mb-2">
                     <span class="px-2 py-1 bg-gray-100 text-gray-700 text-xs font-semibold rounded">
                       {{ temporada.tipo_temporada || 'Temporada' }} {{ temporada.temporada_numero || '' }}
@@ -120,29 +108,29 @@
                   
                   <div class="flex items-center space-x-2">
                     <button
-                      @click="$emit('edit', temporada)"
                       class="px-3 py-1.5 bg-purple-50 text-purple-600 rounded-lg text-sm font-medium hover:bg-purple-100 transition-colors"
+                      @click="$emit('edit', temporada)"
                     >
                       Editar
                     </button>
                     <button
                       v-if="temporada.jikan_id"
-                      @click="$emit('update-from-api', temporada)"
                       class="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors"
                       :title="`Actualizar desde Jikan API (última verificación: ${temporada.ultima_verificacion ? formatDateTime(temporada.ultima_verificacion) : 'nunca'})`"
+                      @click="$emit('update-from-api', temporada)"
                     >
                       🔄 Actualizar
                     </button>
                     <button
                       v-else
-                      @click="$emit('associate-jikan', temporada)"
                       class="px-3 py-1.5 bg-green-50 text-green-600 rounded-lg text-sm font-medium hover:bg-green-100 transition-colors"
+                      @click="$emit('associate-jikan', temporada)"
                     >
                       🔗 Asociar API
                     </button>
                     <button
-                      @click="$emit('delete', temporada)"
                       class="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors"
+                      @click="$emit('delete', temporada)"
                     >
                       Eliminar
                     </button>
@@ -163,19 +151,21 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { useAnimeStore } from '../../stores/animeStore'
 import { formatDate, formatDateTime, formatRelativeTime } from '../../utils/formatters'
+import { getAnimeDisplayTitle } from '../../utils/animeTitles'
 
-const props = defineProps({
+const displayEntrega = (t) => getAnimeDisplayTitle(t)
+
+defineProps({
   series: {
     type: Array,
-    required: true,
     default: () => []
   }
 })
 
-const emit = defineEmits(['edit', 'delete', 'update-from-api', 'associate-jikan'])
+defineEmits(['edit', 'delete', 'update-from-api', 'associate-jikan'])
 
 const animeStore = useAnimeStore()
 const expandedSeries = ref(new Set())
@@ -189,11 +179,11 @@ const handleContextMenu = (temporada) => {
   }
 }
 
-const toggleSerie = (nombreBase) => {
-  if (expandedSeries.value.has(nombreBase)) {
-    expandedSeries.value.delete(nombreBase)
+const toggleSerie = (tituloOriginal) => {
+  if (expandedSeries.value.has(tituloOriginal)) {
+    expandedSeries.value.delete(tituloOriginal)
   } else {
-    expandedSeries.value.add(nombreBase)
+    expandedSeries.value.add(tituloOriginal)
   }
 }
 

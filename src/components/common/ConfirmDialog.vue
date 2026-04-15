@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <Transition name="modal">
     <div 
       v-if="show" 
@@ -9,7 +9,7 @@
       aria-labelledby="confirm-title"
       aria-describedby="confirm-description"
       @mousedown="handleOverlayMouseDown"
-      @mouseup="handleOverlayMouseUp"
+      @mouseup="(e) => handleOverlayMouseUp(e)"
     >
       <div 
         ref="modalContentRef"
@@ -56,15 +56,15 @@
           <!-- Actions -->
           <div class="flex space-x-3 justify-end">
             <button
-              @click="$emit('cancel')"
               class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+              @click="$emit('cancel')"
             >
               {{ cancelText }}
             </button>
             <button
-              @click="$emit('confirm')"
               :class="confirmButtonClass"
               class="px-4 py-2 text-white rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2"
+              @click="$emit('confirm')"
             >
               {{ confirmText }}
             </button>
@@ -78,6 +78,7 @@
 <script setup>
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useFocusTrap } from '../../composables/useFocusTrap'
+import { useModalOverlay } from '../../composables/useModalOverlay'
 
 const props = defineProps({
   show: {
@@ -110,29 +111,11 @@ const props = defineProps({
 const emit = defineEmits(['confirm', 'cancel'])
 
 const modalRef = ref(null)
-const overlayRef = ref(null)
 const modalContentRef = ref(null)
-const mouseDownTarget = ref(null)
 
-// Manejar mousedown en el overlay
-const handleOverlayMouseDown = (event) => {
-  // Guardar dónde comenzó el mousedown
-  mouseDownTarget.value = event.target
-}
-
-// Manejar mouseup en el overlay
-const handleOverlayMouseUp = (event) => {
-  // Solo cerrar si tanto el mousedown como el mouseup fueron en el overlay
-  // (no en el contenido del modal)
-  if (
-    mouseDownTarget.value === overlayRef.value && 
-    event.target === overlayRef.value
-  ) {
-    emit('cancel')
-  }
-  // Resetear el flag
-  mouseDownTarget.value = null
-}
+const { overlayRef, handleOverlayMouseDown, handleOverlayMouseUp } = useModalOverlay(() =>
+  emit('cancel')
+)
 
 const iconClass = computed(() => {
   const classes = {

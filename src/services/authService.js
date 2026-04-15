@@ -8,10 +8,76 @@ const API_URL = import.meta.env.VITE_API_URL || '/api/auth'
 // Modo fallback: si la API no está disponible, usar autenticación local (solo desarrollo)
 const USE_FALLBACK_AUTH = import.meta.env.DEV && import.meta.env.VITE_USE_FALLBACK_AUTH !== 'false'
 
+const MAX_SESSION_DAYS = 7
+
+/** Tras elegir sesión extendida (>1 día), se oculta el selector hasta esta fecha o hasta que expire el token. */
+const SESSION_PICKER_HIDDEN_UNTIL_KEY = 'anime_saver_session_picker_hidden_until'
+const LAST_SESSION_DAYS_KEY = 'anime_saver_last_session_days'
+
+function normalizeSessionDays(days) {
+  const n = Math.floor(Number(days))
+  if (!Number.isFinite(n) || n < 1) return 1
+  return Math.min(MAX_SESSION_DAYS, n)
+}
+
+function clearSessionPickerPreferenceKeys() {
+  if (typeof window === 'undefined') return
+  localStorage.removeItem(SESSION_PICKER_HIDDEN_UNTIL_KEY)
+  localStorage.removeItem(LAST_SESSION_DAYS_KEY)
+}
+
+/**
+ * Si la sesión extendida sigue vigente (p. ej. cerraste sesión antes), no mostrar el selector hasta esa fecha.
+ * @returns {boolean}
+ */
+export function shouldShowSessionPicker() {
+  if (typeof window === 'undefined') return true
+  const raw = localStorage.getItem(SESSION_PICKER_HIDDEN_UNTIL_KEY)
+  const lastDays = localStorage.getItem(LAST_SESSION_DAYS_KEY)
+  if (!raw) return true
+  const until = parseInt(raw, 10)
+  if (Number.isNaN(until) || Date.now() >= until) {
+    clearSessionPickerPreferenceKeys()
+    return true
+  }
+  if (!lastDays) {
+    localStorage.removeItem(SESSION_PICKER_HIDDEN_UNTIL_KEY)
+    return true
+  }
+  return false
+}
+
+/**
+ * Días a usar al enviar login cuando el selector está oculto.
+ * @returns {number}
+ */
+export function getLastSessionDaysForLogin() {
+  if (typeof window === 'undefined') return 1
+  const raw = localStorage.getItem(LAST_SESSION_DAYS_KEY)
+  if (!raw) return 1
+  return normalizeSessionDays(parseInt(raw, 10))
+}
+
+/**
+ * Tras login correcto con sesión extendida: recordar hasta cuándo ocultar el selector (misma fecha que el token).
+ * @param {number} days
+ * @param {number} absoluteExpiresAtMs
+ */
+function persistExtendedSessionPickerPreference(days, absoluteExpiresAtMs) {
+  if (typeof window === 'undefined') return
+  const d = normalizeSessionDays(days)
+  if (d <= 1) return
+  localStorage.setItem(SESSION_PICKER_HIDDEN_UNTIL_KEY, String(absoluteExpiresAtMs))
+  localStorage.setItem(LAST_SESSION_DAYS_KEY, String(d))
+}
+
 /**
  * Autenticación local de fallback (solo desarrollo)
+ * @param {number} [sessionDays=1]
  */
-async function fallbackLogin(password) {
+async function fallbackLogin(password, sessionDays = 1) {
+  const days = normalizeSessionDays(sessionDays)
+  const durationMs = days * 24 * 60 * 60 * 1000
   console.log('🔧 Usando autenticación local (modo desarrollo)')
   
   const correctPasswordHash = import.meta.env.VITE_SITE_PASSWORD_HASH
@@ -48,15 +114,17 @@ async function fallbackLogin(password) {
   }
   
   if (isValid) {
+    const expiresAt = Date.now() + durationMs
     // Generar token simple para desarrollo
     const token = btoa(JSON.stringify({
       authenticated: true,
       timestamp: Date.now(),
-      exp: Date.now() + (24 * 60 * 60 * 1000)
+      exp: expiresAt
     }))
     
     localStorage.setItem('anime_saver_token', token)
-    localStorage.setItem('anime_saver_token_expires', String(Date.now() + (24 * 60 * 60 * 1000)))
+    localStorage.setItem('anime_saver_token_expires', String(expiresAt))
+    persistExtendedSessionPickerPreference(days, expiresAt)
     
     console.log('✅ Login exitoso (modo desarrollo)')
     
@@ -75,8 +143,10 @@ async function fallbackLogin(password) {
 
 /**
  * Intentar login con contraseña (validación en servidor)
+ * @param {number} [sessionDays=1] Duración en días (1–7).
  */
-export async function login(password) {
+export async function login(password, sessionDays = 1) {
+  const days = normalizeSessionDays(sessionDays)
   try {
     const response = await fetch(API_URL, {
       method: 'POST',
@@ -85,14 +155,15 @@ export async function login(password) {
       },
       body: JSON.stringify({
         action: 'login',
-        password
+        password,
+        sessionDays: days
       })
     })
     
     // Si es 404 y estamos en desarrollo con fallback, usar autenticación local
     if (!response.ok && response.status === 404 && USE_FALLBACK_AUTH) {
       console.warn('⚠️ API no disponible, usando autenticación local (modo desarrollo)')
-      return await fallbackLogin(password)
+      return await fallbackLogin(password, days)
     }
     
     if (!response.ok && response.status === 404) {
@@ -106,11 +177,11 @@ export async function login(password) {
     try {
       const text = await response.text()
       data = text ? JSON.parse(text) : {}
-    } catch (e) {
+    } catch {
       // Si falla parsear y estamos en desarrollo, intentar fallback
       if (USE_FALLBACK_AUTH) {
         console.warn('⚠️ Error al procesar respuesta, usando autenticación local')
-        return await fallbackLogin(password)
+        return await fallbackLogin(password, days)
       }
       return {
         success: false,
@@ -123,7 +194,7 @@ export async function login(password) {
       if (response.status === 500 && USE_FALLBACK_AUTH) {
         console.warn('⚠️ Error 500 del servidor, usando autenticación local (modo desarrollo)')
         console.warn('💡 Asegúrate de configurar JWT_SECRET y VITE_SITE_PASSWORD en tu .env')
-        return await fallbackLogin(password)
+        return await fallbackLogin(password, days)
       }
       
       // Proporcionar mensaje de error más descriptivo
@@ -145,9 +216,12 @@ export async function login(password) {
     }
     
     if (data.success && data.token) {
+      const expiresIn = typeof data.expiresIn === 'number' ? data.expiresIn : days * 24 * 60 * 60 * 1000
+      const expiresAt = Date.now() + expiresIn
       // Guardar token en localStorage
       localStorage.setItem('anime_saver_token', data.token)
-      localStorage.setItem('anime_saver_token_expires', String(Date.now() + data.expiresIn))
+      localStorage.setItem('anime_saver_token_expires', String(expiresAt))
+      persistExtendedSessionPickerPreference(days, expiresAt)
       
       return {
         success: true,
@@ -165,7 +239,7 @@ export async function login(password) {
     // Si es error de red y estamos en desarrollo, intentar fallback
     if (USE_FALLBACK_AUTH && (error.message.includes('Failed to fetch') || error.message.includes('NetworkError'))) {
       console.warn('⚠️ Error de conexión, usando autenticación local (modo desarrollo)')
-      return await fallbackLogin(password)
+      return await fallbackLogin(password, days)
     }
     
     return {
@@ -188,7 +262,7 @@ function verifyFallbackToken(token) {
     }
     
     return { authenticated: false }
-  } catch (error) {
+  } catch {
     return { authenticated: false }
   }
 }
@@ -205,7 +279,7 @@ export async function verifyToken(token) {
       // Es token de fallback, verificar localmente
       return verifyFallbackToken(token)
     }
-  } catch (e) {
+  } catch {
     // No es token de fallback, continuar con verificación del servidor
   }
   
@@ -236,7 +310,7 @@ export async function verifyToken(token) {
     try {
       const text = await response.text()
       data = text ? JSON.parse(text) : {}
-    } catch (e) {
+    } catch {
       // Si falla parsear y es token de fallback, verificar localmente
       if (USE_FALLBACK_AUTH) {
         return verifyFallbackToken(token)
@@ -288,9 +362,10 @@ export function getStoredToken() {
   const expiresAt = parseInt(expires, 10)
   
   if (now >= expiresAt) {
-    // Token expirado, limpiar
+    // Token expirado: volver a mostrar el selector de duración en el próximo login
     localStorage.removeItem('anime_saver_token')
     localStorage.removeItem('anime_saver_token_expires')
+    clearSessionPickerPreferenceKeys()
     return null
   }
   
@@ -299,11 +374,15 @@ export function getStoredToken() {
 
 /**
  * Eliminar token
+ * @param {{ preserveSessionPickerPreference?: boolean }} [options] Si es true (p. ej. cierre de sesión manual), se mantiene la preferencia de ocultar el selector hasta la fecha acordada.
  */
-export function removeToken() {
-  if (typeof window !== 'undefined') {
-    localStorage.removeItem('anime_saver_token')
-    localStorage.removeItem('anime_saver_token_expires')
+export function removeToken(options = {}) {
+  const { preserveSessionPickerPreference = false } = options
+  if (typeof window === 'undefined') return
+  localStorage.removeItem('anime_saver_token')
+  localStorage.removeItem('anime_saver_token_expires')
+  if (!preserveSessionPickerPreference) {
+    clearSessionPickerPreferenceKeys()
   }
 }
 

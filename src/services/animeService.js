@@ -1,5 +1,11 @@
 import { supabase } from '../config/supabase'
 import { validateId, validateAnimeName, validateImageUrl, validateEstado, validateTemporadas, validateAnimeData, sanitizeString } from '../utils/validators'
+import { normalizeSupabaseClientError } from '../utils/supabaseErrors'
+
+/** Límite por defecto al listar animes (evita respuestas enormes). */
+export const ANIME_LIST_DEFAULT_LIMIT = 2000
+/** Máximo permitido por petición; para más registros usa `offset` en otra llamada. */
+export const ANIME_LIST_MAX_LIMIT = 5000
 
 /**
  * Servicio para operaciones CRUD de animes
@@ -7,81 +13,70 @@ import { validateId, validateAnimeName, validateImageUrl, validateEstado, valida
  */
 export const animeService = {
   /**
-   * Obtener todos los animes
+   * Lista animes con paginación por rango.
+   * @param {{ limit?: number, offset?: number }} [options]
    */
-  async getAll() {
+  async getAll(options = {}) {
     try {
+      const rawLimit = options.limit != null ? Number(options.limit) : ANIME_LIST_DEFAULT_LIMIT
+      const limit = Math.min(Math.max(Number.isFinite(rawLimit) ? rawLimit : ANIME_LIST_DEFAULT_LIMIT, 1), ANIME_LIST_MAX_LIMIT)
+      const rawOff = options.offset != null ? Number(options.offset) : 0
+      const offset = Math.max(Number.isFinite(rawOff) ? rawOff : 0, 0)
+      const end = offset + limit - 1
+
       const { data, error } = await supabase
         .from('animes')
         .select('*')
-        .order('nombre_base', { ascending: true })
+        .order('titulo_original', { ascending: true })
         .order('temporada_numero', { ascending: true, nullsLast: true })
         .order('created_at', { ascending: false })
-        .limit(1000) // Limitar resultados para prevenir ataques
-      
+        .range(offset, end)
+
       if (error) {
-        // Mejorar mensaje de error
-        if (error.message && error.message.includes('Failed to fetch')) {
-          throw new Error('No se pudo conectar con la base de datos. Verifica tu conexión a internet y la configuración de Supabase.')
-        }
-        throw error
+        throw normalizeSupabaseClientError(error)
       }
       return data || []
     } catch (error) {
-      // Si es un error de red, proporcionar un mensaje más claro
-      if (error instanceof TypeError && error.message === 'Failed to fetch') {
-        throw new Error('Error de conexión: No se pudo conectar con Supabase. Verifica que las variables de entorno VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY estén configuradas correctamente.')
-      }
-      // Detectar específicamente ERR_NAME_NOT_RESOLVED
-      if (error.message && error.message.includes('ERR_NAME_NOT_RESOLVED')) {
-        throw new Error('El dominio de Supabase no se puede resolver. Verifica que la URL (VITE_SUPABASE_URL) sea correcta y que el proyecto no haya sido pausado o eliminado en Supabase.')
-      }
-      // Re-lanzar otros errores
-      throw error
+      throw normalizeSupabaseClientError(error)
     }
   },
 
   /**
-   * Obtener animes agrupados por serie (nombre_base)
+   * Obtener animes agrupados por obra (titulo_original)
    */
   async getGroupedBySeries() {
-    try {
-      const animes = await this.getAll()
-      
-      // Agrupar por nombre_base
-      const grouped = {}
-      animes.forEach(anime => {
-        const key = anime.nombre_base || anime.nombre
-        if (!grouped[key]) {
-          grouped[key] = {
-            nombre_base: key,
-            imagen_url: anime.imagen_url,
-            temporadas: [],
-            estados: new Set(),
-            jikan_id: anime.jikan_id
-          }
+    const animes = await this.getAll()
+
+    const grouped = {}
+    animes.forEach((anime) => {
+      const key = (anime.titulo_original || '').trim() || '(sin título)'
+      if (!grouped[key]) {
+        grouped[key] = {
+          titulo_original: key,
+          imagen_url: anime.imagen_url,
+          temporadas: [],
+          estados: new Set(),
+          jikan_id: anime.jikan_id
         }
-        grouped[key].temporadas.push(anime)
-        if (anime.estado) {
-          grouped[key].estados.add(anime.estado)
-        }
+      }
+      grouped[key].temporadas.push(anime)
+      if (anime.estado) {
+        grouped[key].estados.add(anime.estado)
+      }
+    })
+
+    // Convertir Set a Array
+    Object.keys(grouped).forEach((key) => {
+      grouped[key].estados = Array.from(grouped[key].estados)
+      // Ordenar temporadas por número
+      grouped[key].temporadas.sort((a, b) => {
+        const numA = a.temporada_numero || 0
+        const numB = b.temporada_numero || 0
+        return numA - numB
       })
-      
-      // Convertir Set a Array
-      Object.keys(grouped).forEach(key => {
-        grouped[key].estados = Array.from(grouped[key].estados)
-        // Ordenar temporadas por número
-        grouped[key].temporadas.sort((a, b) => {
-          const numA = a.temporada_numero || 0
-          const numB = b.temporada_numero || 0
-          return numA - numB
-        })
-      })
-      
-      return Object.values(grouped)
-    } catch (error) {
-      throw error
-    }
+    })
+
+    return Object.values(grouped)
   },
 
   /**
@@ -119,13 +114,21 @@ export const animeService = {
     const validatedUpdates = {}
     const errors = []
     
-    // Validar nombre si está presente
-    if (updates.nombre !== undefined) {
-      const nameValidation = validateAnimeName(updates.nombre)
+    if (updates.titulo_original !== undefined) {
+      const nameValidation = validateAnimeName(updates.titulo_original)
       if (!nameValidation.valid) {
         errors.push(nameValidation.error)
       } else {
-        validatedUpdates.nombre = nameValidation.value
+        validatedUpdates.titulo_original = nameValidation.value
+      }
+    }
+
+    if (updates.titulo_entrega !== undefined) {
+      if (updates.titulo_entrega === null || String(updates.titulo_entrega).trim() === '') {
+        validatedUpdates.titulo_entrega = null
+      } else {
+        const t = sanitizeString(String(updates.titulo_entrega)).slice(0, 200)
+        validatedUpdates.titulo_entrega = t.length ? t : null
       }
     }
     
@@ -157,11 +160,6 @@ export const animeService = {
       } else {
         validatedUpdates.temporadas = temporadasValidation.value
       }
-    }
-    
-    // Validar nombre_base si está presente
-    if (updates.nombre_base !== undefined) {
-      validatedUpdates.nombre_base = updates.nombre_base ? sanitizeString(updates.nombre_base).slice(0, 200) : null
     }
     
     // Validar temporada_numero si está presente
@@ -233,13 +231,58 @@ export const animeService = {
         validatedUpdates.episodios = null
       }
     }
-    
-    if (updates.año !== undefined && updates.año !== null) {
-      const num = parseInt(updates.año)
-      if (!isNaN(num) && num >= 1900 && num <= 2100) {
-        validatedUpdates.año = num
+
+    const frecuenciasValidas = ['ninguna', 'manual', 'semanal', 'quincenal', 'mensual', 'trimestral']
+    if (updates.episodio_frecuencia !== undefined) {
+      const f = updates.episodio_frecuencia == null ? '' : String(updates.episodio_frecuencia).trim()
+      validatedUpdates.episodio_frecuencia = frecuenciasValidas.includes(f) ? f : 'ninguna'
+    }
+    if (updates.episodio_dias_semana !== undefined) {
+      if (Array.isArray(updates.episodio_dias_semana)) {
+        const dias = updates.episodio_dias_semana
+          .map((d) => parseInt(d, 10))
+          .filter((n) => !isNaN(n) && n >= 0 && n <= 6)
+        validatedUpdates.episodio_dias_semana = [...new Set(dias)].sort((a, b) => a - b)
       } else {
-        validatedUpdates.año = null
+        validatedUpdates.episodio_dias_semana = []
+      }
+    }
+    if (updates.proximo_episodio_fecha !== undefined) {
+      if (updates.proximo_episodio_fecha === null || updates.proximo_episodio_fecha === '') {
+        validatedUpdates.proximo_episodio_fecha = null
+      } else {
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/
+        if (dateRegex.test(updates.proximo_episodio_fecha)) {
+          const date = new Date(updates.proximo_episodio_fecha)
+          if (!isNaN(date.getTime())) {
+            validatedUpdates.proximo_episodio_fecha = updates.proximo_episodio_fecha
+          } else {
+            errors.push('Fecha de próximo episodio inválida')
+          }
+        } else {
+          errors.push('Formato de próximo episodio inválido (YYYY-MM-DD)')
+        }
+      }
+    }
+    if (updates.monitoreo_activo !== undefined) {
+      validatedUpdates.monitoreo_activo = !!updates.monitoreo_activo
+    }
+
+    if (updates.ultima_revision_info !== undefined) {
+      if (updates.ultima_revision_info === null || updates.ultima_revision_info === '') {
+        validatedUpdates.ultima_revision_info = null
+      } else {
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/
+        if (dateRegex.test(updates.ultima_revision_info)) {
+          const date = new Date(updates.ultima_revision_info)
+          if (!isNaN(date.getTime())) {
+            validatedUpdates.ultima_revision_info = updates.ultima_revision_info
+          } else {
+            errors.push('Fecha de última revisión inválida')
+          }
+        } else {
+          errors.push('Formato de última revisión inválido (YYYY-MM-DD)')
+        }
       }
     }
     

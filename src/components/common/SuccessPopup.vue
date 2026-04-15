@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <Transition name="notification">
     <div
       v-if="show"
@@ -18,9 +18,9 @@
           <p v-if="title && title !== 'Éxito'" class="text-xs text-gray-500 mt-1">{{ title }}</p>
         </div>
         <button
-          @click="close"
           class="text-gray-400 hover:text-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 rounded"
           aria-label="Cerrar notificación de éxito"
+          @click="close"
         >
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />

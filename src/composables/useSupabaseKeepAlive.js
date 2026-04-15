@@ -1,5 +1,6 @@
 import { onMounted, onUnmounted } from 'vue'
-import { supabase, isSupabaseConfigured } from '../config/supabase'
+import { isSupabaseConfigured } from '../config/supabase'
+import { performSupabasePing } from '../utils/supabasePing'
 
 /**
  * Composable para mantener Supabase activo mediante pings periódicos
@@ -26,43 +27,20 @@ export function useSupabaseKeepAlive(options = {}) {
     }
 
     try {
-      // Método 1: Verificar sesión de autenticación (muy ligero, no depende de tablas)
-      // Este es el método preferido ya que no requiere acceso a tablas específicas
-      const { error: authError } = await supabase.auth.getSession()
-      
-      if (!authError) {
-        // Ping exitoso usando auth (silencioso en producción)
+      const result = await performSupabasePing()
+      if (result.ok) {
         if (import.meta.env.DEV) {
-          console.debug('[KeepAlive] Ping exitoso a Supabase (auth)')
+          console.debug('[KeepAlive] Ping exitoso a Supabase', result.method ? `(${result.method})` : '')
         }
         return
       }
-
-      // Método 2: Si auth falla, intentar con una consulta ligera a la tabla animes
-      // Solo si la tabla existe y está accesible
-      const { error: queryError } = await supabase
-        .from('animes')
-        .select('id')
-        .limit(1)
-        .maybeSingle() // maybeSingle() evita error si no hay registros
-
-      if (queryError && queryError.code !== 'PGRST116') { // PGRST116 = no rows returned, es aceptable
-        // Si ambos métodos fallan, registrar advertencia pero no es crítico
-        if (import.meta.env.DEV) {
-          console.warn('[KeepAlive] Advertencia en ping a Supabase:', queryError.message)
-        }
-        if (onError) {
-          onError(queryError)
-        }
-      } else {
-        // Ping exitoso usando query (silencioso en producción)
-        if (import.meta.env.DEV) {
-          console.debug('[KeepAlive] Ping exitoso a Supabase (query)')
-        }
+      if (import.meta.env.DEV) {
+        console.warn('[KeepAlive] Ping fallido:', result.error)
+      }
+      if (onError && result.error) {
+        onError(new Error(result.error))
       }
     } catch (error) {
-      // Errores de red u otros errores - no críticos para keep-alive
-      // Estos errores pueden ocurrir si el proyecto está pausado o hay problemas de red
       if (import.meta.env.DEV) {
         console.warn('[KeepAlive] Error en ping (no crítico):', error.message)
       }

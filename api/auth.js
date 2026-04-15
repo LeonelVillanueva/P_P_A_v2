@@ -1,209 +1,102 @@
 /**
  * Vercel Serverless Function para autenticación
- * 
- * Esta función valida la contraseña en el servidor y genera tokens JWT seguros
  */
 
-// JWT Secret (debe estar en variables de entorno)
-const JWT_SECRET = process.env.JWT_SECRET || process.env.VITE_SITE_PASSWORD_HASH || process.env.VITE_SITE_PASSWORD
+import {
+  getJwtSecret,
+  generateJwtToken,
+  verifyJwtToken,
+  comparePasswordSha256,
+  createLoginPayload,
+  parseSessionDays
+} from '../lib/auth-server.js'
 
-/**
- * Generar token JWT simple
- * Compatible con Vercel Serverless Functions (Node.js runtime)
- * En producción, considera usar una librería como jose
- */
-async function generateToken(payload) {
-  const header = {
-    alg: 'HS256',
-    typ: 'JWT'
-  }
-  
-  // Usar Buffer para base64 (Vercel Serverless Functions usa Node.js, Buffer disponible)
-  const encodedHeader = Buffer.from(JSON.stringify(header)).toString('base64')
-    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
-  const encodedPayload = Buffer.from(JSON.stringify(payload)).toString('base64')
-    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
-  const signature = await signToken(`${encodedHeader}.${encodedPayload}`, JWT_SECRET)
-  
-  return `${encodedHeader}.${encodedPayload}.${signature}`
-}
-
-/**
- * Firmar token usando Web Crypto API
- */
-async function signToken(data, secret) {
-  const encoder = new TextEncoder()
-  const keyData = encoder.encode(secret)
-  const messageData = encoder.encode(data)
-  
-  const key = await crypto.subtle.importKey(
-    'raw',
-    keyData,
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign']
-  )
-  
-  const signature = await crypto.subtle.sign('HMAC', key, messageData)
-  const signatureArray = Array.from(new Uint8Array(signature))
-  
-  // Buffer está disponible en Vercel Serverless Functions (Node.js runtime)
-  return Buffer.from(signatureArray).toString('base64')
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=/g, '')
-}
-
-/**
- * Verificar token JWT
- */
-async function verifyToken(token) {
-  try {
-    const parts = token.split('.')
-    if (parts.length !== 3) return null
-    
-    const [header, payload, signature] = parts
-    const expectedSignature = await signToken(`${header}.${payload}`, JWT_SECRET)
-    
-    // Comparación segura de firmas
-    if (signature !== expectedSignature) return null
-    
-    // Decodificar base64url (Vercel Serverless Functions usa Node.js, Buffer disponible)
-    const base64 = payload.replace(/-/g, '+').replace(/_/g, '/')
-    const padding = (4 - base64.length % 4) % 4
-    const paddedBase64 = base64 + '='.repeat(padding)
-    const decodedPayload = JSON.parse(Buffer.from(paddedBase64, 'base64').toString('utf-8'))
-    
-    // Verificar expiración (24 horas)
-    const now = Math.floor(Date.now() / 1000)
-    if (decodedPayload.exp && decodedPayload.exp < now) {
-      return null
-    }
-    
-    return decodedPayload
-  } catch (error) {
-    return null
-  }
-}
-
-/**
- * Hash de contraseña usando SHA-256
- */
-async function hashPassword(password) {
-  const encoder = new TextEncoder()
-  const data = encoder.encode(password)
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
-  const hashArray = Array.from(new Uint8Array(hashBuffer))
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
-}
-
-/**
- * Comparar contraseña con hash
- */
-async function comparePassword(password, hash) {
-  const passwordHash = await hashPassword(password)
-  return passwordHash === hash
-}
+const JWT_SECRET = getJwtSecret()
 
 export default async function handler(req, res) {
-  // Configurar CORS
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-  
-  // Manejar preflight
+
   if (req.method === 'OPTIONS') {
     return res.status(200).end()
   }
-  
-  // Solo permitir POST
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
-  
+
   try {
-    // Parsear body (Vercel Serverless Functions ya parsea el body automáticamente)
     const body = req.body || {}
-    const { action, password, token } = body
-    
-    // Verificar que JWT_SECRET esté configurado
+    const { action, password, token, sessionDays: rawSessionDays } = body
+
     if (!JWT_SECRET) {
       console.error('JWT_SECRET no está configurado')
       return res.status(500).json({ error: 'Server configuration error' })
     }
-    
-    // Acción: login
+
     if (action === 'login') {
       if (!password) {
         return res.status(400).json({ error: 'Password is required' })
       }
-      
-      // Obtener hash de contraseña correcta
+
       const correctPasswordHash = process.env.VITE_SITE_PASSWORD_HASH
       const correctPassword = process.env.VITE_SITE_PASSWORD
-      
+
       let isValid = false
-      
+
       if (correctPasswordHash) {
-        // Comparar con hash
-        isValid = await comparePassword(password, correctPasswordHash)
+        isValid = await comparePasswordSha256(password, correctPasswordHash)
       } else if (correctPassword) {
-        // Comparar directamente (modo legacy)
         isValid = password === correctPassword
       } else {
         return res.status(500).json({ error: 'Authentication not configured' })
       }
-      
+
       if (isValid) {
-        // Generar token JWT (expira en 24 horas)
-        const payload = {
-          authenticated: true,
-          timestamp: Date.now(),
-          exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) // 24 horas
-        }
-        
-        const jwtToken = await generateToken(payload)
-        
+        const sessionDays = parseSessionDays(rawSessionDays)
+        const payload = createLoginPayload(sessionDays)
+        const jwtToken = await generateJwtToken(payload, JWT_SECRET)
+        const expiresInMs = sessionDays * 24 * 60 * 60 * 1000
+
         return res.status(200).json({
           success: true,
           token: jwtToken,
-          expiresIn: 24 * 60 * 60 * 1000 // 24 horas en milisegundos
-        })
-      } else {
-        return res.status(401).json({
-          success: false,
-          error: 'Invalid password'
+          expiresIn: expiresInMs,
+          sessionDays
         })
       }
+
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid password'
+      })
     }
-    
-    // Acción: verify (verificar token)
+
     if (action === 'verify') {
       if (!token) {
         return res.status(400).json({ error: 'Token is required' })
       }
-      
-      const payload = await verifyToken(token)
-      
+
+      const payload = await verifyJwtToken(token, JWT_SECRET)
+
       if (payload && payload.authenticated) {
         return res.status(200).json({
           success: true,
           authenticated: true
         })
-      } else {
-        return res.status(401).json({
-          success: false,
-          authenticated: false,
-          error: 'Invalid or expired token'
-        })
       }
+
+      return res.status(401).json({
+        success: false,
+        authenticated: false,
+        error: 'Invalid or expired token'
+      })
     }
-    
+
     return res.status(400).json({ error: 'Invalid action' })
-    
   } catch (error) {
     console.error('Auth error:', error)
     return res.status(500).json({ error: 'Internal server error' })
   }
 }
-

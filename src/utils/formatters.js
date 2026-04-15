@@ -3,6 +3,29 @@
  */
 
 /**
+ * Parsea fechas evitando desfases por zona horaria para formato YYYY-MM-DD.
+ * Cuando viene solo fecha (sin hora), se crea en hora local.
+ */
+const parseDateSafe = (value) => {
+  if (!value) return null 
+  if (value instanceof Date) return value 
+  if (typeof value !== 'string') return new Date(value)
+
+  const raw = value.trim()
+  if (!raw) return null
+
+  // Caso típico de inputs type="date" almacenados como YYYY-MM-DD.
+  const onlyDateMatch = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  if (onlyDateMatch) {
+    const year = Number(onlyDateMatch[1]) 
+    const monthIndex = Number(onlyDateMatch[2]) - 1
+    const day = Number(onlyDateMatch[3]) 
+    return new Date(year, monthIndex, day) 
+  }
+  return new Date(raw) 
+}
+
+/**
  * Formatea una fecha a formato legible
  * @param {string} dateString - Fecha en formato ISO
  * @param {boolean} short - Si es true, formato corto para móviles
@@ -10,7 +33,8 @@
  */
 export const formatDate = (dateString, short = false) => {
   if (!dateString) return ''
-  const date = new Date(dateString)
+  const date = parseDateSafe(dateString)
+  if (!date || Number.isNaN(date.getTime())) return ''
   
   if (short) {
     // Formato corto para móviles: DD/MM

@@ -5,15 +5,20 @@ import { ref, computed } from 'vue'
  */
 export function useAnimeForm(initialAnime = null) {
   const formData = ref({
-    nombre: '',
-    nombre_base: '', // Nombre base de la serie (para agrupar temporadas)
+    titulo_original: '',
+    titulo_entrega: '',
     estado: '',
     temporadas: [],
     imagen_url: null,
     temporada_numero: null, // Número de temporada (1, 2, 3, etc.)
     tipo_temporada: 'Temporada', // Tipo: Temporada, Movie, OVA, Spin off
     fecha_estreno: null, // Fecha de estreno
-    jikan_id: null // ID de Jikan API para actualizaciones automáticas
+    jikan_id: null, // ID de Jikan API para actualizaciones automáticas
+    episodio_frecuencia: 'ninguna',
+    episodio_dias_semana: [],
+    proximo_episodio_fecha: null,
+    monitoreo_activo: false,
+    ultima_revision_info: null
   })
 
   const previewImage = ref(null)
@@ -28,15 +33,22 @@ export function useAnimeForm(initialAnime = null) {
   const resetForm = (anime = null) => {
     if (anime) {
       formData.value = {
-        nombre: anime.nombre || '',
-        nombre_base: anime.nombre_base || anime.nombre || '', // Si no hay nombre_base, usar nombre
+        titulo_original: anime.titulo_original || '',
+        titulo_entrega: anime.titulo_entrega || '',
         estado: anime.estado || '',
         temporadas: [...(anime.temporadas || [])],
         imagen_url: anime.imagen_url || null,
         temporada_numero: anime.temporada_numero || null,
         tipo_temporada: anime.tipo_temporada || 'Temporada',
         fecha_estreno: anime.fecha_estreno || null,
-        jikan_id: anime.jikan_id || null
+        jikan_id: anime.jikan_id || null,
+        episodio_frecuencia: anime.episodio_frecuencia || 'ninguna',
+        episodio_dias_semana: Array.isArray(anime.episodio_dias_semana)
+          ? [...anime.episodio_dias_semana]
+          : [],
+        proximo_episodio_fecha: anime.proximo_episodio_fecha || null,
+        monitoreo_activo: !!anime.monitoreo_activo,
+        ultima_revision_info: anime.ultima_revision_info || null
       }
       
       // Si hay imagen_url pero no es un archivo local, mantenerla para mostrar
@@ -46,15 +58,20 @@ export function useAnimeForm(initialAnime = null) {
       }
     } else {
       formData.value = {
-        nombre: '',
-        nombre_base: '',
+        titulo_original: '',
+        titulo_entrega: '',
         estado: '',
         temporadas: [],
         imagen_url: null,
         temporada_numero: null,
         tipo_temporada: 'Temporada',
         fecha_estreno: null,
-        jikan_id: null
+        jikan_id: null,
+        episodio_frecuencia: 'ninguna',
+        episodio_dias_semana: [],
+        proximo_episodio_fecha: null,
+        monitoreo_activo: false,
+        ultima_revision_info: null
       }
       previewImage.value = null
     }
@@ -74,6 +91,14 @@ export function useAnimeForm(initialAnime = null) {
     }
   }
 
+  /** URL externa (p. ej. Jikan): quita archivo local y usa la URL en el formulario */
+  const applyExternalImageUrl = (url) => {
+    if (!url) return
+    imageFile.value = null
+    previewImage.value = null
+    formData.value.imagen_url = url
+  }
+
   // Obtener datos del formulario para enviar
   const getFormData = () => {
     return {
@@ -89,6 +114,7 @@ export function useAnimeForm(initialAnime = null) {
     isEditing,
     resetForm,
     handleImageChange,
+    applyExternalImageUrl,
     getFormData
   }
 }

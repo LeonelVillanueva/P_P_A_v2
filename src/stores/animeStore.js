@@ -3,12 +3,15 @@ import { animeService } from '../services/animeService'
 import { configService } from '../services/configService'
 import { storageService } from '../services/storageService'
 import { animeUpdateService } from '../services/animeUpdateService'
+import { compareAnimesByTitle } from '../utils/animeTitles'
 
 export const useAnimeStore = defineStore('anime', {
   state: () => ({
     animes: [],
     estados: [],
     temporadas: [],
+    /** null = todos los estados muestran el paso Seguimiento en el modal; [] = ninguno */
+    estadosPasoSeguimiento: null,
     loading: false,
     error: null,
     // Anime que se está arrastrando (para drag & drop entre vistas)
@@ -29,11 +32,15 @@ export const useAnimeStore = defineStore('anime', {
       // Filtro por búsqueda (nombre)
       if (filters.search && filters.search.trim()) {
         const searchLower = filters.search.toLowerCase().trim()
-        filtered = filtered.filter(anime => 
-          anime.nombre.toLowerCase().includes(searchLower) ||
-          anime.nombre_base?.toLowerCase().includes(searchLower) ||
-          anime.sinopsis?.toLowerCase().includes(searchLower)
-        )
+        filtered = filtered.filter((anime) => {
+          const o = (anime.titulo_original || '').toLowerCase()
+          const e = (anime.titulo_entrega || '').toLowerCase()
+          return (
+            o.includes(searchLower) ||
+            e.includes(searchLower) ||
+            anime.sinopsis?.toLowerCase().includes(searchLower)
+          )
+        })
       }
       
       // Filtro por estado
@@ -48,14 +55,12 @@ export const useAnimeStore = defineStore('anime', {
         )
       }
       
-      // Filtro por año
+      // Filtro por año (derivado de fecha_estreno; ya no existe columna año)
       if (filters.año) {
-        filtered = filtered.filter(anime => {
-          if (anime.año) return anime.año === filters.año
-          if (anime.fecha_estreno) {
-            return new Date(anime.fecha_estreno).getFullYear() === filters.año
-          }
-          return false
+        filtered = filtered.filter((anime) => {
+          if (!anime.fecha_estreno) return false
+          const y = new Date(anime.fecha_estreno).getFullYear()
+          return y === filters.año
         })
       }
       
@@ -86,10 +91,10 @@ export const useAnimeStore = defineStore('anime', {
       if (filters.sortBy) {
         switch (filters.sortBy) {
           case 'nombre-asc':
-            filtered.sort((a, b) => a.nombre.localeCompare(b.nombre))
+            filtered.sort(compareAnimesByTitle)
             break
           case 'nombre-desc':
-            filtered.sort((a, b) => b.nombre.localeCompare(a.nombre))
+            filtered.sort((a, b) => compareAnimesByTitle(b, a))
             break
           case 'fecha-asc':
             filtered.sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
@@ -168,24 +173,25 @@ export const useAnimeStore = defineStore('anime', {
       }
     },
 
-    async fetchEstados() {
+    async fetchConfiguracion() {
       try {
-        this.estados = await configService.getEstados()
+        const c = await configService.getConfiguracion()
+        this.estados = c.estados
+        this.temporadas = c.temporadas
+        this.estadosPasoSeguimiento = c.estadosPasoSeguimiento
       } catch (error) {
         if (import.meta.env.DEV) {
-          console.error('Error fetching estados:', error)
+          console.error('Error fetching configuración:', error)
         }
       }
     },
 
+    async fetchEstados() {
+      await this.fetchConfiguracion()
+    },
+
     async fetchTemporadas() {
-      try {
-        this.temporadas = await configService.getTemporadas()
-      } catch (error) {
-        if (import.meta.env.DEV) {
-          console.error('Error fetching temporadas:', error)
-        }
-      }
+      await this.fetchConfiguracion()
     },
 
     async createAnime(anime) {
@@ -233,7 +239,20 @@ export const useAnimeStore = defineStore('anime', {
           this.estados = valores
         } else if (tipo === 'temporadas') {
           this.temporadas = valores
+        } else if (tipo === 'estados_paso_seguimiento') {
+          this.estadosPasoSeguimiento = valores
         }
+      } catch (error) {
+        this.error = error.message
+        throw error
+      }
+    },
+
+    async updateEstadosYSeguimiento(estados, estadosPasoSeguimiento) {
+      try {
+        await configService.updateEstadosYSeguimiento(estados, estadosPasoSeguimiento)
+        this.estados = estados
+        this.estadosPasoSeguimiento = estadosPasoSeguimiento
       } catch (error) {
         this.error = error.message
         throw error

@@ -1,13 +1,14 @@
 import { computed } from 'vue'
+import { getAnimeObraKey } from '../utils/animeTitles'
 
 /**
- * Composable para manejar agrupación de animes por serie
+ * Composable para manejar agrupación de animes por obra (titulo_original)
  * Evita duplicados cuando temporadas del mismo anime están en diferentes estados
  */
 export function useAnimeSeries(animeStore) {
   /**
-   * Agrupa animes por nombre_base (serie)
-   * Cada serie contiene todas sus temporadas
+   * Agrupa animes por titulo_original (misma obra)
+   * Cada serie contiene todas sus temporadas / entregas
    */
   const seriesAgrupadas = computed(() => {
     if (!animeStore.animes || animeStore.animes.length === 0) {
@@ -17,21 +18,16 @@ export function useAnimeSeries(animeStore) {
     const grouped = {}
     
     animeStore.animes.forEach(anime => {
-      // Usar nombre_base si existe, sino usar nombre
-      const serieKey = anime.nombre_base || anime.nombre
+      const serieKey = getAnimeObraKey(anime) || '(sin título)'
       
       if (!grouped[serieKey]) {
         grouped[serieKey] = {
-          nombre_base: serieKey,
+          titulo_original: serieKey,
           imagen_url: anime.imagen_url,
           temporadas: [],
           estados: new Set(),
           jikan_id: anime.jikan_id,
-          // Información agregada de la serie
-          total_temporadas: 0,
-          temporadas_vistas: 0,
-          temporadas_emision: 0,
-          temporadas_estrenos: 0
+          total_temporadas: 0
         }
       }
 
@@ -41,15 +37,6 @@ export function useAnimeSeries(animeStore) {
       // Actualizar estados
       if (anime.estado) {
         grouped[serieKey].estados.add(anime.estado)
-      }
-
-      // Contar temporadas por estado
-      if (anime.estado === 'Animes Vistos') {
-        grouped[serieKey].temporadas_vistas++
-      } else if (anime.estado === 'Emisión') {
-        grouped[serieKey].temporadas_emision++
-      } else if (anime.estado === 'Estrenos') {
-        grouped[serieKey].temporadas_estrenos++
       }
     })
 
@@ -73,17 +60,17 @@ export function useAnimeSeries(animeStore) {
   })
 
   /**
-   * Obtener serie por nombre_base
+   * Obtener serie por titulo_original (clave de obra)
    */
-  const getSerie = (nombreBase) => {
-    return seriesAgrupadas.value.find(s => s.nombre_base === nombreBase)
+  const getSerie = (tituloOriginal) => {
+    return seriesAgrupadas.value.find(s => s.titulo_original === tituloOriginal)
   }
 
   /**
    * Obtener temporadas de una serie filtradas por estado
    */
-  const getTemporadasByEstado = (nombreBase, estado) => {
-    const serie = getSerie(nombreBase)
+  const getTemporadasByEstado = (tituloOriginal, estado) => {
+    const serie = getSerie(tituloOriginal)
     if (!serie) return []
     return serie.temporadas.filter(t => t.estado === estado)
   }
@@ -91,33 +78,19 @@ export function useAnimeSeries(animeStore) {
   /**
    * Verificar si una serie tiene temporadas en múltiples estados
    */
-  const hasMultipleEstados = (nombreBase) => {
-    const serie = getSerie(nombreBase)
+  const hasMultipleEstados = (tituloOriginal) => {
+    const serie = getSerie(tituloOriginal)
     return serie && serie.estados.length > 1
   }
 
   /**
    * Obtener el estado principal de una serie (el más común o el más reciente)
    */
-  const getEstadoPrincipal = (nombreBase) => {
-    const serie = getSerie(nombreBase)
+  const getEstadoPrincipal = (tituloOriginal) => {
+    const serie = getSerie(tituloOriginal)
     if (!serie || serie.estados.length === 0) return null
     
-    // Si solo tiene un estado, retornarlo
-    if (serie.estados.length === 1) {
-      return serie.estados[0]
-    }
-
-    // Priorizar: Emisión > Estrenos > En espera > Animes Vistos
-    const priority = ['Emisión', 'Estrenos', 'En espera', 'Animes Vistos']
-    for (const estado of priority) {
-      if (serie.estados.includes(estado)) {
-        return estado
-      }
-    }
-
-    // Si no coincide con prioridad, usar el primero
-    return serie.estados[0]
+    return [...serie.estados].sort((a, b) => a.localeCompare(b, 'es'))[0]
   }
 
   /**
@@ -140,8 +113,12 @@ export function useAnimeSeries(animeStore) {
 
     const searchLower = query.toLowerCase().trim()
     return seriesAgrupadas.value.filter(serie => 
-      serie.nombre_base.toLowerCase().includes(searchLower) ||
-      serie.temporadas.some(t => t.nombre.toLowerCase().includes(searchLower))
+      serie.titulo_original.toLowerCase().includes(searchLower) ||
+      serie.temporadas.some(t => {
+        const o = (t.titulo_original || '').toLowerCase()
+        const e = (t.titulo_entrega || '').toLowerCase()
+        return o.includes(searchLower) || e.includes(searchLower)
+      })
     )
   }
 

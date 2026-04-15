@@ -1,4 +1,4 @@
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onUnmounted } from 'vue'
 
 /**
  * Composable para auto-guardado y sincronización
@@ -76,7 +76,9 @@ export function useAutoSave(options = {}) {
   }
 
   /**
-   * Agregar cambio a la cola de guardado
+   * Encola un cambio para el próximo guardado automático (debounce).
+   * No uses esto en la misma acción que ya persiste en API/Supabase;
+   * ahí bastaría con refrescar datos o no marcar nada extra.
    */
   const queueChange = (change) => {
     saveQueue.value.push({

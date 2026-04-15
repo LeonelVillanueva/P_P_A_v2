@@ -249,7 +249,8 @@ export const animeApiService = {
     }
 
     return {
-      nombre: nombre,
+      titulo_original: nombre,
+      titulo_entrega: null,
       imagen_url: imagenUrl
     }
   },
@@ -257,14 +258,9 @@ export const animeApiService = {
   /**
    * Mapear estado de Jikan a estados internos
    */
-  mapStatus(jikanStatus) {
-    const statusMap = {
-      'Currently Airing': 'Emisión',
-      'Finished Airing': 'Animes Vistos',
-      'Not yet aired': 'Estrenos',
-      'On Hold': 'En espera'
-    }
-    return statusMap[jikanStatus] || 'Sin fecha'
+  /** Reservado; ya no se mapea a nombres de estado fijos. */
+  mapStatus() {
+    return null
   }
 }
 

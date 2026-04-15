@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <Transition name="modal">
     <div 
       v-if="show" 
@@ -22,8 +22,8 @@
             <span>Buscar Anime</span>
           </h2>
           <button 
-            @click="$emit('close')"
             class="text-white/80 hover:text-white hover:bg-white/20 rounded-lg p-1.5 transition-all duration-200"
+            @click="$emit('close')"
           >
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -37,19 +37,19 @@
             <div class="flex-1 relative">
               <input
                 v-model="searchQuery"
-                @input="debouncedSearch"
                 type="text"
                 placeholder="Busca un anime... (ej: Naruto, One Piece)"
                 class="w-full px-4 py-3 pl-11 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all outline-none"
+                @input="debouncedSearch"
               />
               <svg class="absolute left-3 top-3.5 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
             <button
-              @click="handleSearch"
               :disabled="loading || !searchQuery.trim()"
               class="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-pink-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              @click="handleSearch"
             >
               Buscar
             </button>
@@ -75,8 +75,8 @@
             <div
               v-for="anime in results"
               :key="anime.mal_id || anime.id"
-              @click="selectAnime(anime)"
               class="bg-white rounded-xl p-4 border-2 border-gray-200 hover:border-purple-400 hover:shadow-md transition-all cursor-pointer"
+              @click="selectAnime(anime)"
             >
               <div class="flex space-x-4">
                 <img
@@ -203,7 +203,7 @@ const handleSearch = async () => {
     
     // Guardar en caché
     searchCache.set(searchQuery.value, data)
-  } catch (err) {
+  } catch {
     // El error ya fue manejado por handleError y se mostrará en la notificación
     error.value = 'No se pudieron cargar los resultados. Intenta de nuevo.'
   } finally {

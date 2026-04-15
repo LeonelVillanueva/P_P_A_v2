@@ -1,50 +1,50 @@
 <template>
-  <div class="mb-6">
-    <div class="bg-white rounded-xl shadow-md border border-gray-200 p-4">
-      <div class="flex flex-col sm:flex-row gap-3">
-        <!-- Búsqueda -->
-        <div class="flex-1 relative">
-          <input
-            v-model="searchQuery"
-            @input="handleSearch"
-            type="text"
-            placeholder="Buscar anime por nombre..."
-            class="w-full px-4 py-3 pl-11 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all outline-none bg-white text-gray-800 placeholder-gray-400"
-            :aria-label="'Buscar anime por nombre'"
-          />
-          <svg class="absolute left-3 top-3.5 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-        </div>
+  <div class="mb-4">
+    <div class="bg-elevated rounded-card shadow-card border border-border-subtle p-3 sm:p-4">
+      <!-- Fila 1: búsqueda (prioridad visual) -->
+      <div class="relative w-full">
+        <input
+          ref="searchInputRef"
+          v-model="searchQuery"
+          type="text"
+          placeholder="Buscar anime por nombre..."
+          class="w-full px-4 py-3 pl-11 border-2 border-border-subtle rounded-card focus:ring-2 focus:ring-accent-ring focus:border-accent transition-all outline-none bg-elevated text-ink placeholder:text-ink-subtle"
+          :aria-label="'Buscar anime por nombre'"
+          data-main-anime-search="true"
+          @input="handleSearch"
+        />
+        <svg class="absolute left-3 top-3.5 w-5 h-5 text-ink-subtle" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+      </div>
 
-        <!-- Filtro por Estado -->
+      <!-- Fila 2: filtros (secundarios, wrap en desktop) -->
+      <div class="mt-3 flex flex-wrap items-end gap-2 sm:gap-3">
         <select
           v-model="filters.estado"
-          @change="handleFilterChange"
-          class="px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none bg-white text-gray-800"
+          class="min-w-[10rem] flex-1 sm:flex-none px-3 sm:px-4 py-2.5 sm:py-3 border-2 border-border-subtle rounded-card focus:ring-2 focus:ring-accent-ring focus:border-accent outline-none bg-elevated text-ink text-sm sm:text-base"
           aria-label="Filtrar por estado"
+          @change="handleFilterChange"
         >
           <option value="">Todos los estados</option>
           <option v-for="estado in estados" :key="estado" :value="estado">{{ estado }}</option>
         </select>
 
-        <!-- Filtro por Temporada -->
         <select
           v-model="filters.temporada"
-          @change="handleFilterChange"
-          class="px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none bg-white text-gray-800"
+          class="min-w-[10rem] flex-1 sm:flex-none px-3 sm:px-4 py-2.5 sm:py-3 border-2 border-border-subtle rounded-card focus:ring-2 focus:ring-accent-ring focus:border-accent outline-none bg-elevated text-ink text-sm sm:text-base"
           aria-label="Filtrar por temporada"
+          @change="handleFilterChange"
         >
           <option value="">Todas las temporadas</option>
           <option v-for="temp in temporadas" :key="temp" :value="temp">{{ temp }}</option>
         </select>
 
-        <!-- Ordenar -->
         <select
           v-model="filters.sortBy"
-          @change="handleFilterChange"
-          class="px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none bg-white text-gray-800"
+          class="min-w-[11rem] flex-1 sm:flex-[1_1_12rem] px-3 sm:px-4 py-2.5 sm:py-3 border-2 border-border-subtle rounded-card focus:ring-2 focus:ring-accent-ring focus:border-accent outline-none bg-elevated text-ink text-sm sm:text-base"
           aria-label="Ordenar resultados"
+          @change="handleFilterChange"
         >
           <option value="">Sin ordenar</option>
           <option value="nombre-asc">Nombre (A-Z)</option>
@@ -56,24 +56,24 @@
           <option value="fecha-estreno-desc">Fecha estreno (pasados)</option>
         </select>
 
-        <!-- Filtro avanzado toggle -->
         <button
-          @click="showAdvanced = !showAdvanced"
-          class="px-4 py-3 bg-purple-50 hover:bg-purple-100 text-purple-600 rounded-xl font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 flex items-center space-x-2"
+          type="button"
+          class="px-4 py-2.5 sm:py-3 bg-accent-muted hover:bg-accent-subtle text-accent rounded-card font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-accent-ring flex items-center gap-2 shrink-0"
           aria-label="Filtros avanzados"
+          @click="showAdvanced = !showAdvanced"
         >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
           </svg>
           <span class="hidden sm:inline">Avanzado</span>
         </button>
 
-        <!-- Limpiar Filtros -->
         <button
           v-if="hasActiveFilters"
-          @click="clearFilters"
-          class="px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500"
+          type="button"
+          class="px-4 py-2.5 sm:py-3 bg-surface-muted hover:bg-border-subtle text-ink-muted rounded-card font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-border-strong shrink-0"
           aria-label="Limpiar filtros"
+          @click="clearFilters"
         >
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -83,69 +83,65 @@
 
       <!-- Filtros Avanzados (expandible) -->
       <Transition name="slide-down">
-        <div v-if="showAdvanced" class="mt-4 pt-4 border-t border-gray-200">
+        <div v-if="showAdvanced" class="mt-4 pt-4 border-t border-border-subtle">
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            <!-- Filtro por año -->
             <div>
-              <label class="block text-xs font-semibold text-gray-700 mb-2">Año</label>
+              <label class="block text-xs font-semibold text-ink mb-2">Año</label>
               <input
                 v-model.number="filters.año"
                 type="number"
                 placeholder="Ej: 2024"
-                class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none text-sm"
+                class="w-full px-3 py-2 border-2 border-border-subtle rounded-lg focus:ring-2 focus:ring-accent-ring focus:border-accent outline-none text-sm bg-elevated text-ink"
                 @input="handleFilterChange"
               />
             </div>
 
-            <!-- Filtro por episodios -->
             <div>
-              <label class="block text-xs font-semibold text-gray-700 mb-2">Episodios (mín)</label>
+              <label class="block text-xs font-semibold text-ink mb-2">Episodios (mín)</label>
               <input
                 v-model.number="filters.episodiosMin"
                 type="number"
                 placeholder="Ej: 12"
-                class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none text-sm"
+                class="w-full px-3 py-2 border-2 border-border-subtle rounded-lg focus:ring-2 focus:ring-accent-ring focus:border-accent outline-none text-sm bg-elevated text-ink"
                 @input="handleFilterChange"
               />
             </div>
 
-            <!-- Filtro por fecha de estreno -->
             <div>
-              <label class="block text-xs font-semibold text-gray-700 mb-2">Estreno desde</label>
+              <label class="block text-xs font-semibold text-ink mb-2">Estreno desde</label>
               <input
                 v-model="filters.fechaDesde"
                 type="date"
-                class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none text-sm"
+                class="w-full px-3 py-2 border-2 border-border-subtle rounded-lg focus:ring-2 focus:ring-accent-ring focus:border-accent outline-none text-sm bg-elevated text-ink"
                 @change="handleFilterChange"
               />
             </div>
 
-            <!-- Filtro por fecha de estreno hasta -->
             <div>
-              <label class="block text-xs font-semibold text-gray-700 mb-2">Estreno hasta</label>
+              <label class="block text-xs font-semibold text-ink mb-2">Estreno hasta</label>
               <input
                 v-model="filters.fechaHasta"
                 type="date"
-                class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none text-sm"
+                class="w-full px-3 py-2 border-2 border-border-subtle rounded-lg focus:ring-2 focus:ring-accent-ring focus:border-accent outline-none text-sm bg-elevated text-ink"
                 @change="handleFilterChange"
               />
             </div>
           </div>
 
-          <!-- Filtros guardados -->
-          <div class="mt-4 flex items-center justify-between">
-            <div class="flex items-center space-x-2">
+          <div class="mt-4 flex flex-wrap items-center justify-between gap-2">
+            <div class="flex flex-wrap items-center gap-2">
               <button
+                type="button"
+                class="px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-sm font-medium hover:bg-emerald-100 transition-colors"
                 @click="saveFilterPreset"
-                class="px-3 py-1.5 bg-green-50 text-green-600 rounded-lg text-sm font-medium hover:bg-green-100 transition-colors"
               >
-                💾 Guardar filtros
+                Guardar filtros
               </button>
               <select
                 v-if="savedFilters.length > 0"
                 v-model="selectedPreset"
+                class="px-3 py-1.5 border-2 border-border-subtle rounded-lg text-sm focus:ring-2 focus:ring-accent-ring outline-none bg-elevated text-ink"
                 @change="loadFilterPreset"
-                class="px-3 py-1.5 border-2 border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none"
               >
                 <option value="">Filtros guardados...</option>
                 <option v-for="preset in savedFilters" :key="preset.id" :value="preset.id">
@@ -155,18 +151,18 @@
             </div>
             <button
               v-if="selectedPreset"
+              type="button"
+              class="px-3 py-1.5 bg-danger-muted text-danger rounded-lg text-sm font-medium hover:bg-red-100 transition-colors"
               @click="deleteFilterPreset"
-              class="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors"
             >
-              🗑️ Eliminar preset
+              Eliminar preset
             </button>
           </div>
         </div>
       </Transition>
 
-      <!-- Resultados de búsqueda -->
-      <div v-if="searchQuery || hasActiveFilters" class="mt-3 text-sm text-gray-600">
-        <span v-if="isGlobalSearch" class="text-purple-600 font-semibold">🔍 Búsqueda global:</span>
+      <div v-if="searchQuery || hasActiveFilters" class="mt-3 text-sm text-ink-muted">
+        <span v-if="isGlobalSearch" class="text-accent font-semibold">Búsqueda global:</span>
         Mostrando {{ filteredCount }} de {{ totalCount }} animes
       </div>
     </div>
@@ -174,9 +170,10 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { setMainSearchFocusHandler } from '../../utils/searchFocusBridge'
 
-const props = defineProps({
+defineProps({
   estados: {
     type: Array,
     default: () => []
@@ -201,6 +198,7 @@ const props = defineProps({
 
 const emit = defineEmits(['update:filters', 'update:search'])
 
+const searchInputRef = ref(null)
 const searchQuery = ref('')
 const showAdvanced = ref(false)
 const selectedPreset = ref('')
@@ -218,7 +216,6 @@ const filters = ref({
 
 let searchTimeout = null
 
-// Cargar filtros guardados
 const loadSavedFilters = () => {
   try {
     const stored = localStorage.getItem('anime_filter_presets')
@@ -230,7 +227,6 @@ const loadSavedFilters = () => {
   }
 }
 
-// Guardar filtros guardados
 const saveSavedFilters = () => {
   try {
     localStorage.setItem('anime_filter_presets', JSON.stringify(savedFilters.value))
@@ -239,7 +235,6 @@ const saveSavedFilters = () => {
   }
 }
 
-// Guardar preset de filtros
 const saveFilterPreset = () => {
   const name = prompt('Nombre del preset de filtros:')
   if (!name) return
@@ -256,7 +251,6 @@ const saveFilterPreset = () => {
   selectedPreset.value = preset.id
 }
 
-// Cargar preset de filtros
 const loadFilterPreset = () => {
   if (!selectedPreset.value) return
 
@@ -269,7 +263,6 @@ const loadFilterPreset = () => {
   }
 }
 
-// Eliminar preset
 const deleteFilterPreset = () => {
   if (!selectedPreset.value) return
   if (!confirm('¿Eliminar este preset de filtros?')) return
@@ -279,13 +272,12 @@ const deleteFilterPreset = () => {
   selectedPreset.value = ''
 }
 
-// Cargar al montar
 loadSavedFilters()
 
 const hasActiveFilters = computed(() => {
-  return searchQuery.value.trim() || 
-         filters.value.estado || 
-         filters.value.temporada || 
+  return searchQuery.value.trim() ||
+         filters.value.estado ||
+         filters.value.temporada ||
          filters.value.sortBy ||
          filters.value.año ||
          filters.value.episodiosMin ||
@@ -297,10 +289,10 @@ const handleSearch = () => {
   if (searchTimeout) {
     clearTimeout(searchTimeout)
   }
-  
+
   searchTimeout = setTimeout(() => {
     emit('update:search', searchQuery.value.trim())
-  }, 300) // Debounce de 300ms
+  }, 300)
 }
 
 const handleFilterChange = () => {
@@ -323,12 +315,26 @@ const clearFilters = () => {
   emit('update:filters', { ...filters.value })
 }
 
-// Limpiar timeout al desmontar
-import { onUnmounted } from 'vue'
+function focusSearchInput() {
+  const el = searchInputRef.value
+  if (el && typeof el.focus === 'function') {
+    el.focus()
+    el.select?.()
+  }
+}
+
+onMounted(() => {
+  setMainSearchFocusHandler(focusSearchInput)
+})
+
 onUnmounted(() => {
+  setMainSearchFocusHandler(null)
   if (searchTimeout) {
     clearTimeout(searchTimeout)
   }
 })
-</script>
 
+defineExpose({
+  focusSearch: focusSearchInput
+})
+</script>

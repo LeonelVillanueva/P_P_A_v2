@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <Transition name="notification">
     <div
       v-if="error && error.type !== 'success'"
@@ -18,9 +18,9 @@
           <p v-if="error.context" class="text-xs text-gray-500 mt-1">{{ error.context }}</p>
         </div>
         <button
-          @click="$emit('dismiss')"
           class="text-gray-400 hover:text-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 rounded"
           aria-label="Cerrar notificación de error"
+          @click="$emit('dismiss')"
         >
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -33,7 +33,7 @@
 
 <script setup>
 defineProps({
-  error: Object
+  error: { type: Object, default: null }
 })
 
 defineEmits(['dismiss'])

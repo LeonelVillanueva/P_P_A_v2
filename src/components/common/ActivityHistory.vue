@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <Transition name="modal">
     <div
       v-if="show"
@@ -15,8 +15,8 @@
             <span>Historial de Actividad</span>
           </h2>
           <button
-            @click="$emit('close')"
             class="text-white/80 hover:text-white hover:bg-white/20 rounded-lg p-1.5 transition-all"
+            @click="$emit('close')"
           >
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -45,8 +45,8 @@
             </select>
             <button
               v-if="hasFilters"
-              @click="clearFilters"
               class="px-3 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-sm font-medium transition-colors"
+              @click="clearFilters"
             >
               Limpiar
             </button>
@@ -94,8 +94,8 @@
             {{ filteredHistory.length }} de {{ history.length }} actividades
           </div>
           <button
-            @click="clearAllHistory"
             class="px-4 py-2 bg-red-50 text-red-600 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors"
+            @click="clearAllHistory"
           >
             Limpiar historial
           </button>
@@ -111,7 +111,7 @@ import { formatDateTime } from '../../utils/formatters'
 
 const props = defineProps({
   show: Boolean,
-  history: Array
+  history: { type: Array, default: () => [] }
 })
 
 const emit = defineEmits(['close', 'clear'])

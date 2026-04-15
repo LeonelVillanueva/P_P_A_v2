@@ -38,6 +38,15 @@ scripts/
 # Database (migraciones y scripts SQL)
 database/
 
+# Supabase (CLI, migraciones; no versionar)
+supabase/
+
+# Tests (uso local / no en GitHub)
+tests/
+
+# Cursor (reglas y estado del editor)
+.cursor/
+
 # Build outputs
 build/
 *.tsbuildinfo

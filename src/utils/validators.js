@@ -155,12 +155,24 @@ export function validateAnimeData(animeData, estadosValidos = []) {
   const errors = []
   const validated = {}
   
-  // Validar nombre
-  const nameValidation = validateAnimeName(animeData.nombre)
+  // Título original de la obra (obligatorio)
+  const nameValidation = validateAnimeName(animeData.titulo_original)
   if (!nameValidation.valid) {
     errors.push(nameValidation.error)
   } else {
-    validated.nombre = nameValidation.value
+    validated.titulo_original = nameValidation.value
+  }
+
+  // Título de esta entrega / secuela (opcional)
+  if (animeData.titulo_entrega !== undefined && animeData.titulo_entrega !== null && String(animeData.titulo_entrega).trim() !== '') {
+    const t = sanitizeString(String(animeData.titulo_entrega)).slice(0, 200)
+    if (t.length < 1) {
+      validated.titulo_entrega = null
+    } else {
+      validated.titulo_entrega = t
+    }
+  } else {
+    validated.titulo_entrega = null
   }
   
   // Validar imagen URL
@@ -188,10 +200,6 @@ export function validateAnimeData(animeData, estadosValidos = []) {
   }
   
   // Campos opcionales (no requieren validación estricta, solo sanitización si existen)
-  if (animeData.nombre_base !== undefined) {
-    validated.nombre_base = animeData.nombre_base ? sanitizeString(animeData.nombre_base).slice(0, 200) : null
-  }
-  
   if (animeData.temporada_numero !== undefined && animeData.temporada_numero !== null) {
     const num = parseInt(animeData.temporada_numero)
     if (!isNaN(num) && num > 0) {
@@ -217,6 +225,46 @@ export function validateAnimeData(animeData, estadosValidos = []) {
     const id = parseInt(animeData.jikan_id)
     if (!isNaN(id) && id > 0) {
       validated.jikan_id = id
+    }
+  }
+
+  const frecuenciasValidas = ['ninguna', 'manual', 'semanal', 'quincenal', 'mensual', 'trimestral']
+  if (animeData.episodio_frecuencia !== undefined && animeData.episodio_frecuencia !== null) {
+    const f = String(animeData.episodio_frecuencia).trim()
+    validated.episodio_frecuencia = frecuenciasValidas.includes(f) ? f : 'ninguna'
+  }
+  if (animeData.episodio_dias_semana !== undefined) {
+    if (Array.isArray(animeData.episodio_dias_semana)) {
+      const dias = animeData.episodio_dias_semana
+        .map((d) => parseInt(d, 10))
+        .filter((n) => !isNaN(n) && n >= 0 && n <= 6)
+      validated.episodio_dias_semana = [...new Set(dias)].sort((a, b) => a - b)
+    } else {
+      validated.episodio_dias_semana = []
+    }
+  }
+  if (animeData.proximo_episodio_fecha !== undefined) {
+    if (animeData.proximo_episodio_fecha === null || animeData.proximo_episodio_fecha === '') {
+      validated.proximo_episodio_fecha = null
+    } else {
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/
+      if (dateRegex.test(animeData.proximo_episodio_fecha)) {
+        validated.proximo_episodio_fecha = animeData.proximo_episodio_fecha
+      }
+    }
+  }
+  if (animeData.monitoreo_activo !== undefined) {
+    validated.monitoreo_activo = !!animeData.monitoreo_activo
+  }
+
+  if (animeData.ultima_revision_info !== undefined) {
+    if (animeData.ultima_revision_info === null || animeData.ultima_revision_info === '') {
+      validated.ultima_revision_info = null
+    } else {
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/
+      if (dateRegex.test(animeData.ultima_revision_info)) {
+        validated.ultima_revision_info = animeData.ultima_revision_info
+      }
     }
   }
   

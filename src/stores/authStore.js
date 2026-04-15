@@ -99,7 +99,10 @@ export const useAuthStore = defineStore('auth', () => {
   /**
    * Intentar login con contraseña (validación en servidor)
    */
-  const login = async (password) => {
+  /**
+   * @param {number} [sessionDays=1] Duración de sesión en días (1–7); el servidor acota el JWT.
+   */
+  const login = async (password, sessionDays = 1) => {
     // Obtener identificador único para rate limiting
     const identifier = getIdentifier()
     
@@ -115,7 +118,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
     
     // Llamar a la API del servidor para validar contraseña
-    const result = await apiLogin(password)
+    const result = await apiLogin(password, sessionDays)
     
     if (result.success) {
       // Login exitoso - el token ya está guardado en authService
@@ -157,7 +160,7 @@ export const useAuthStore = defineStore('auth', () => {
    */
   const logout = () => {
     isAuthenticated.value = false
-    removeToken()
+    removeToken({ preserveSessionPickerPreference: true })
   }
 
   return {
