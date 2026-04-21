@@ -33,22 +33,69 @@ dotenv.config({ path: join(__dirname, '..', '.env') })
 const app = express()
 const PORT = 3001
 
-app.use(cors())
+const allowedOrigins = (process.env.CORS_ALLOWED_ORIGINS || 'http://localhost:5173,http://localhost:4173,http://localhost:3000')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean)
+
+const corsOptions = {
+  origin(origin, callback) {
+    // Permite herramientas sin Origin (curl, server-to-server).
+    if (!origin) return callback(null, true)
+    return callback(null, allowedOrigins.includes(origin))
+  },
+  methods: ['POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}
+
+app.use(cors(corsOptions))
 app.use(express.json())
 
 const JWT_SECRET = getJwtSecret()
 const isDev = process.env.NODE_ENV !== 'production'
+
+function parseCookieHeader(cookieHeader = '') {
+  const pairs = cookieHeader.split(';')
+  const out = {}
+  for (const pair of pairs) {
+    const idx = pair.indexOf('=')
+    if (idx === -1) continue
+    const key = pair.slice(0, idx).trim()
+    const value = pair.slice(idx + 1).trim()
+    if (!key) continue
+    out[key] = decodeURIComponent(value)
+  }
+  return out
+}
+
+function setSessionCookie(res, token, maxAgeMs) {
+  const maxAgeSeconds = Math.max(1, Math.floor(maxAgeMs / 1000))
+  const secure = process.env.NODE_ENV === 'production' ? '; Secure' : ''
+  res.setHeader(
+    'Set-Cookie',
+    `anime_saver_session=${encodeURIComponent(token)}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${maxAgeSeconds}${secure}`
+  )
+}
+
+function clearSessionCookie(res) {
+  const secure = process.env.NODE_ENV === 'production' ? '; Secure' : ''
+  res.setHeader(
+    'Set-Cookie',
+    `anime_saver_session=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0${secure}`
+  )
+}
 
 app.post('/api/auth', async (req, res) => {
   try {
     const { action, password, token, sessionDays: rawSessionDays } = req.body
 
     if (!JWT_SECRET) {
-      console.error('❌ JWT_SECRET no está configurado')
-      console.error('📝 Agrega JWT_SECRET a tu archivo .env')
+      console.error('❌ Falta una credencial interna de seguridad')
+      console.error('📝 Revisa las variables privadas del entorno')
       return res.status(500).json({
-        error: 'Server configuration error: JWT_SECRET no configurado',
-        hint: 'Agrega JWT_SECRET, VITE_SITE_PASSWORD_HASH o VITE_SITE_PASSWORD a tu archivo .env'
+        error: 'Server configuration error',
+        hint: 'Falta una credencial interna de seguridad'
       })
     }
 
@@ -62,21 +109,17 @@ app.post('/api/auth', async (req, res) => {
       }
 
       const correctPasswordHash = process.env.VITE_SITE_PASSWORD_HASH
-      const correctPassword = process.env.VITE_SITE_PASSWORD
 
       let isValid = false
 
       if (correctPasswordHash) {
         isValid = await comparePasswordSha256(password, correctPasswordHash)
         if (isDev) console.log('🔐 Comparación con hash:', isValid ? '✅ Válida' : '❌ Inválida')
-      } else if (correctPassword) {
-        isValid = password === correctPassword
-        if (isDev) console.log('🔐 Comparación directa:', isValid ? '✅ Válida' : '❌ Inválida')
       } else {
         console.error('❌ No hay contraseña configurada')
         return res.status(500).json({
           error: 'Authentication not configured',
-          message: 'Agrega VITE_SITE_PASSWORD o VITE_SITE_PASSWORD_HASH a tu archivo .env',
+          message: 'Configura una credencial de acceso en variables privadas',
           hint: 'Ejecuta: npm run hash-password "tu-contraseña" para generar el hash'
         })
       }
@@ -89,9 +132,9 @@ app.post('/api/auth', async (req, res) => {
           if (isDev) console.log('✅ Token generado exitosamente')
 
           const expiresInMs = sessionDays * 24 * 60 * 60 * 1000
+          setSessionCookie(res, jwtToken, expiresInMs)
           return res.status(200).json({
             success: true,
-            token: jwtToken,
             expiresIn: expiresInMs,
             sessionDays
           })
@@ -100,7 +143,7 @@ app.post('/api/auth', async (req, res) => {
           return res.status(500).json({
             error: 'Error generando token',
             message: tokenError.message,
-            details: isDev ? tokenError.stack : undefined
+            details: undefined
           })
         }
       }
@@ -113,11 +156,14 @@ app.post('/api/auth', async (req, res) => {
     }
 
     if (action === 'verify') {
-      if (!token) {
+      const cookies = parseCookieHeader(req.headers?.cookie || '')
+      const cookieToken = cookies.anime_saver_session || ''
+      const tokenToVerify = token || cookieToken
+      if (!tokenToVerify) {
         return res.status(400).json({ error: 'Token is required' })
       }
 
-      const payload = await verifyJwtToken(token, JWT_SECRET)
+      const payload = await verifyJwtToken(tokenToVerify, JWT_SECRET)
 
       if (payload && payload.authenticated) {
         return res.status(200).json({
@@ -133,13 +179,18 @@ app.post('/api/auth', async (req, res) => {
       })
     }
 
+    if (action === 'logout') {
+      clearSessionCookie(res)
+      return res.status(200).json({ success: true })
+    }
+
     return res.status(400).json({ error: 'Invalid action' })
   } catch (error) {
     console.error('❌ Auth error:', error)
     return res.status(500).json({
       error: 'Internal server error',
-      message: error.message,
-      details: isDev ? error.stack : undefined
+      message: 'Unexpected server failure',
+      details: undefined
     })
   }
 })
@@ -147,7 +198,9 @@ app.post('/api/auth', async (req, res) => {
 app.post('/api/data', async (req, res) => {
   try {
     const auth = req.headers?.authorization || ''
-    const token = auth.startsWith('Bearer ') ? auth.slice('Bearer '.length).trim() : ''
+    const bearerToken = auth.startsWith('Bearer ') ? auth.slice('Bearer '.length).trim() : ''
+    const cookies = parseCookieHeader(req.headers?.cookie || '')
+    const token = cookies.anime_saver_session || bearerToken
     if (!token) {
       return res.status(401).json({ error: 'Unauthorized: token requerido' })
     }
@@ -161,7 +214,7 @@ app.post('/api/data', async (req, res) => {
     if (!cfg.supabaseUrl || !cfg.serviceRoleKey) {
       return res.status(500).json({
         error: 'Server configuration error',
-        hint: 'Faltan SUPABASE_URL y/o SUPABASE_SERVICE_ROLE_KEY'
+        hint: 'Faltan credenciales de acceso a datos en el servidor'
       })
     }
 
@@ -199,5 +252,5 @@ app.post('/api/data', async (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`🚀 Servidor de desarrollo API corriendo en http://localhost:${PORT}`)
-  console.log('📝 Asegúrate de tener JWT_SECRET configurado en .env')
+  console.log('📝 Verifica que tus credenciales privadas esten configuradas en .env')
 })

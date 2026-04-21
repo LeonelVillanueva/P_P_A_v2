@@ -45,7 +45,7 @@ export const useAuthStore = defineStore('auth', () => {
       }
       
       // Verificar token con el servidor (con timeout)
-      const verifyPromise = verifyToken(token)
+      const verifyPromise = token === 'cookie-session' ? verifyToken() : verifyToken(token)
       const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => reject(new Error('Timeout')), 3000)
       )
@@ -53,15 +53,8 @@ export const useAuthStore = defineStore('auth', () => {
       let result
       try {
         result = await Promise.race([verifyPromise, timeoutPromise])
-      } catch (timeoutError) {
-        // Timeout o error - en desarrollo, si el token existe, permitir acceso
-        if (import.meta.env.DEV) {
-          console.warn('⚠️ Timeout verificando token, permitiendo acceso en desarrollo')
-          isAuthenticated.value = true
-          checkingAuth.value = false
-          return true
-        }
-        throw timeoutError
+      } catch (timeoutOrNetworkError) {
+        throw timeoutOrNetworkError
       }
       
       if (result && result.authenticated) {
@@ -77,18 +70,7 @@ export const useAuthStore = defineStore('auth', () => {
       }
     } catch (error) {
       console.error('Error checking session:', error)
-      
-      // En desarrollo, si hay error pero el token existe, permitir acceso
-      if (import.meta.env.DEV) {
-        const token = getStoredToken()
-        if (token) {
-          console.warn('⚠️ Error verificando token, permitiendo acceso en desarrollo')
-          isAuthenticated.value = true
-          checkingAuth.value = false
-          return true
-        }
-      }
-      
+      removeToken()
       isAuthenticated.value = false
       checkingAuth.value = false
       return false

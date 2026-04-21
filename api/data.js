@@ -7,8 +7,17 @@ import {
   updateConfiguracionSecure
 } from '../lib/data-server.js'
 
-function setCors(res) {
-  res.setHeader('Access-Control-Allow-Origin', '*')
+function setCorsForRequest(req, res) {
+  const allowedOrigins = (process.env.CORS_ALLOWED_ORIGINS || '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean)
+  const origin = req.headers?.origin || ''
+  if (origin && allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin)
+    res.setHeader('Vary', 'Origin')
+    res.setHeader('Access-Control-Allow-Credentials', 'true')
+  }
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
 }
@@ -19,8 +28,21 @@ function getBearerToken(req) {
   return auth.slice('Bearer '.length).trim()
 }
 
+function getCookieToken(req) {
+  const raw = req.headers?.cookie || ''
+  const pairs = raw.split(';')
+  for (const pair of pairs) {
+    const idx = pair.indexOf('=')
+    if (idx === -1) continue
+    const key = pair.slice(0, idx).trim()
+    if (key !== 'anime_saver_session') continue
+    return decodeURIComponent(pair.slice(idx + 1).trim())
+  }
+  return ''
+}
+
 export default async function handler(req, res) {
-  setCors(res)
+  setCorsForRequest(req, res)
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end()
@@ -34,11 +56,11 @@ export default async function handler(req, res) {
   if (!jwtSecret) {
     return res.status(500).json({
       error: 'Server configuration error',
-      hint: 'JWT_SECRET no configurado'
+      hint: 'Falta una credencial interna de seguridad'
     })
   }
 
-  const token = getBearerToken(req)
+  const token = getCookieToken(req) || getBearerToken(req)
   if (!token) {
     return res.status(401).json({ error: 'Unauthorized: token requerido' })
   }
@@ -52,7 +74,7 @@ export default async function handler(req, res) {
   if (!config.supabaseUrl || !config.serviceRoleKey) {
     return res.status(500).json({
       error: 'Server configuration error',
-      hint: 'Faltan SUPABASE_URL y/o SUPABASE_SERVICE_ROLE_KEY'
+      hint: 'Faltan credenciales de acceso a datos en el servidor'
     })
   }
 
@@ -82,9 +104,10 @@ export default async function handler(req, res) {
 
     return res.status(400).json({ error: 'Invalid action' })
   } catch (error) {
+    const isDev = process.env.NODE_ENV !== 'production'
     return res.status(error.status || 500).json({
       error: error.message || 'Internal server error',
-      details: error.details || null
+      details: isDev ? error.details || null : undefined
     })
   }
 }

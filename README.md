@@ -1,135 +1,51 @@
-# Hanare — Gestor de animes
+# Hanare
 
-Aplicación web para gestionar y organizar tus animes favoritos, desarrollada con Vue 3, Tailwind CSS y Supabase.
+Aplicacion web para gestionar contenido de anime con frontend moderno y API de apoyo.
 
-## 🚀 Características
+## Caracteristicas
 
-- ✅ Gestión de animes en diferentes secciones (Vistos, Estrenos, Sin fecha, Emisión, En espera, Faltantes)
-- 🖼️ Subida y almacenamiento de imágenes de portada
-- 🏷️ Sistema de temporadas personalizable (1, 2, 3, Movie, OVA, Spin off, etc.)
-- ⚙️ Configuración personalizada de estados y temporadas
-- 🔍 Búsqueda de animes en API externa (Jikan/MyAnimeList)
-- 🛡️ Validación y seguridad de datos
-- 📱 Diseño responsive y moderno
-- 🔐 Autenticación en servidor con tokens JWT
+- Gestion de elementos por estado y temporada.
+- Busqueda externa de contenido.
+- Operaciones protegidas por autenticacion.
+- Flujo de datos con endpoints de servidor.
 
-## 🛠️ Tecnologías
-
-- **Vue 3** - Framework JavaScript
-- **Vite** - Build tool
-- **Tailwind CSS** - Framework CSS
-- **Pinia** - State management
-- **Vue Router** - Routing
-- **Supabase** - Backend (PostgreSQL + Storage)
-- **Jikan API** - API externa de animes
-- **Vercel** - Hosting y Serverless Functions
-
-## 📦 Instalación
+## Desarrollo local
 
 ```bash
-# Instalar dependencias
 npm install
-
-# Configurar variables de entorno
-# Copia .env.example a .env y configura tus variables
-```
-
-## 🚀 Desarrollo
-
-### **Opción 1: Ejecutar todo junto (Recomendado)**
-
-```bash
 npm run dev:all
 ```
 
-Esto ejecuta tanto el servidor API de desarrollo como Vite en paralelo.
+Tambien puedes correr por separado:
 
-### **Opción 2: Ejecutar por separado**
-
-**Terminal 1 - Servidor API:**
 ```bash
 npm run dev:api
-```
-
-**Terminal 2 - Vite:**
-```bash
 npm run dev
 ```
 
-## 🔐 Configuración de Autenticación
+## Scripts utiles
 
-### **Variables de Entorno Requeridas:**
+- `npm run dev`
+- `npm run dev:api`
+- `npm run dev:all`
+- `npm run build`
+- `npm run preview`
+- `npm run lint`
+- `npm run test`
+- `npm run security:secrets`
 
-```env
-# JWT Secret (genera uno con: npm run hash-password "tu-secret")
-JWT_SECRET=tu-secret-seguro-aqui
+## Configuracion
 
-# Contraseña o Hash
-VITE_SITE_PASSWORD_HASH=tu-hash-aqui
-# O
-VITE_SITE_PASSWORD=tu-contraseña-aqui
+- Usa variables de entorno privadas para credenciales y secretos.
+- No subas archivos `.env` al repositorio.
+- Manten separados entornos de desarrollo, preview y produccion.
 
-# Supabase
-VITE_SUPABASE_URL=tu-url-supabase
-VITE_SUPABASE_ANON_KEY=tu-anon-key
-```
+## Seguridad
 
-### **Generar Hash de Contraseña:**
+- Autenticacion en servidor.
+- CORS con allowlist configurable.
+- Escaneo automatizado de secretos en CI.
 
-```bash
-npm run hash-password "tu-contraseña"
-```
+## Licencia
 
-## 📝 Scripts Disponibles
-
-- `npm run dev` - Inicia Vite (solo frontend)
-- `npm run dev:api` - Inicia servidor API de desarrollo
-- `npm run dev:all` - Inicia ambos (API + Vite)
-- `npm run build` - Build para producción
-- `npm run preview` - Preview del build
-- `npm run verify` - Verifica configuración de Supabase
-- `npm run hash-password` - Genera hash de contraseña
-- `npm run test-login` - Prueba configuración de login
-
-## 🚀 Despliegue
-
-### **Vercel**
-
-1. Conecta tu repositorio a Vercel
-2. Configura las variables de entorno en Vercel Dashboard:
-   - Ve a tu proyecto en Vercel Dashboard
-   - Settings → Environment Variables
-   - Agrega las siguientes variables:
-     - `JWT_SECRET` - Secret para JWT (genera uno seguro)
-     - `VITE_SITE_PASSWORD_HASH` o `VITE_SITE_PASSWORD` - Hash o contraseña del sitio
-     - `VITE_SUPABASE_URL` - URL de tu proyecto Supabase (formato: `https://xxxxx.supabase.co`)
-     - `VITE_SUPABASE_ANON_KEY` - Anon public key de Supabase (Settings → API → anon public)
-3. **IMPORTANTE:** Después de agregar las variables, haz un nuevo deploy
-4. Deploy automático en cada push
-
-**⚠️ Si ves el error "Failed to fetch":**
-- Verifica que todas las variables de entorno estén configuradas en Vercel
-- Asegúrate de que `VITE_SUPABASE_URL` tenga el formato correcto: `https://xxxxx.supabase.co`
-- Verifica que `VITE_SUPABASE_ANON_KEY` sea la clave "anon public" (no la service_role)
-- Después de agregar/modificar variables, haz un nuevo deploy
-
-## 📚 Documentación
-
-Consulta la carpeta `docs/` para documentación detallada:
-
-- `IMPLEMENTACION_AUTH_SERVIDOR.md` - Autenticación en servidor
-- `SEGURIDAD_INTERCEPTS.md` - Seguridad contra intercepts
-- `DESPLIEGUE_VERCEL.md` - Guía de despliegue
-- `SETUP_DATABASE.md` - Configuración de base de datos
-
-## 🔒 Seguridad
-
-- ✅ Autenticación en servidor (Vercel Edge Functions)
-- ✅ Tokens JWT seguros
-- ✅ Validación de datos
-- ✅ Headers de seguridad
-- ✅ Supabase RLS (Row Level Security)
-
-## 📄 Licencia
-
-Proyecto personal - Uso privado
+Proyecto personal de uso privado.

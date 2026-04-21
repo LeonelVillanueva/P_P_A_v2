@@ -13,19 +13,19 @@ export function normalizeSupabaseClientError(error) {
 
   if (error instanceof TypeError && msg === 'Failed to fetch') {
     return new Error(
-      'Error de conexión: No se pudo conectar con Supabase. Verifica que las variables de entorno VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY estén configuradas correctamente.'
+      'Error de conexión: no se pudo establecer comunicación con el servicio de datos. Verifica la configuración del cliente.'
     )
   }
 
   if (msg.includes('ERR_NAME_NOT_RESOLVED')) {
     return new Error(
-      'El dominio de Supabase no se puede resolver. Verifica que la URL (VITE_SUPABASE_URL) sea correcta y que el proyecto no haya sido pausado o eliminado en Supabase.'
+      'No se pudo resolver el dominio del servicio de datos. Verifica que la URL configurada sea correcta y que el servicio esté activo.'
     )
   }
 
   if (msg.includes('Failed to fetch')) {
     return new Error(
-      'No se pudo conectar con la base de datos. Verifica tu conexión a internet y la configuración de Supabase.'
+      'No se pudo conectar con el servicio de datos. Verifica tu conexión a internet y la configuración general.'
     )
   }
 

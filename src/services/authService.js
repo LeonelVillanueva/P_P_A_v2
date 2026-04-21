@@ -6,9 +6,10 @@
 const API_URL = import.meta.env.VITE_API_URL || '/api/auth'
 
 // Modo fallback: si la API no está disponible, usar autenticación local (solo desarrollo)
-const USE_FALLBACK_AUTH = import.meta.env.DEV && import.meta.env.VITE_USE_FALLBACK_AUTH !== 'false'
+const USE_FALLBACK_AUTH = import.meta.env.DEV && import.meta.env.VITE_USE_FALLBACK_AUTH === 'true'
 
 const MAX_SESSION_DAYS = 7
+const SESSION_EXPIRES_KEY = 'anime_saver_session_expires'
 
 /** Tras elegir sesión extendida (>1 día), se oculta el selector hasta esta fecha o hasta que expire el token. */
 const SESSION_PICKER_HIDDEN_UNTIL_KEY = 'anime_saver_session_picker_hidden_until'
@@ -81,13 +82,12 @@ async function fallbackLogin(password, sessionDays = 1) {
   console.log('🔧 Usando autenticación local (modo desarrollo)')
   
   const correctPasswordHash = import.meta.env.VITE_SITE_PASSWORD_HASH
-  const correctPassword = import.meta.env.VITE_SITE_PASSWORD
   
-  if (!correctPassword && !correctPasswordHash) {
+  if (!correctPasswordHash) {
     console.error('❌ No hay contraseña configurada')
     return {
       success: false,
-      error: 'Contraseña no configurada en variables de entorno. Agrega VITE_SITE_PASSWORD o VITE_SITE_PASSWORD_HASH en tu .env'
+      error: 'No hay una credencial de acceso configurada en el entorno.'
     }
   }
   
@@ -108,9 +108,6 @@ async function fallbackLogin(password, sessionDays = 1) {
         error: 'Error de autenticación'
       }
     }
-  } else if (correctPassword) {
-    isValid = secureCompare(password, correctPassword)
-    console.log('🔐 Verificación directa:', isValid ? '✅ Válida' : '❌ Inválida')
   }
   
   if (isValid) {
@@ -124,6 +121,7 @@ async function fallbackLogin(password, sessionDays = 1) {
     
     localStorage.setItem('anime_saver_token', token)
     localStorage.setItem('anime_saver_token_expires', String(expiresAt))
+    localStorage.setItem(SESSION_EXPIRES_KEY, String(expiresAt))
     persistExtendedSessionPickerPreference(days, expiresAt)
     
     console.log('✅ Login exitoso (modo desarrollo)')
@@ -150,6 +148,7 @@ export async function login(password, sessionDays = 1) {
   try {
     const response = await fetch(API_URL, {
       method: 'POST',
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json'
       },
@@ -193,7 +192,7 @@ export async function login(password, sessionDays = 1) {
       // Si es error 500, intentar usar fallback en desarrollo
       if (response.status === 500 && USE_FALLBACK_AUTH) {
         console.warn('⚠️ Error 500 del servidor, usando autenticación local (modo desarrollo)')
-        console.warn('💡 Asegúrate de configurar JWT_SECRET y VITE_SITE_PASSWORD en tu .env')
+        console.warn('💡 Verifica que las credenciales privadas de autenticación estén configuradas en el entorno.')
         return await fallbackLogin(password, days)
       }
       
@@ -205,7 +204,7 @@ export async function login(password, sessionDays = 1) {
         } else if (data.message) {
           errorMessage += `. ${data.message}`
         } else {
-          errorMessage += '. Verifica la configuración del servidor (JWT_SECRET y VITE_SITE_PASSWORD)'
+          errorMessage += '. Verifica la configuración de autenticación del servidor.'
         }
       }
       
@@ -215,17 +214,16 @@ export async function login(password, sessionDays = 1) {
       }
     }
     
-    if (data.success && data.token) {
+    if (data.success) {
       const expiresIn = typeof data.expiresIn === 'number' ? data.expiresIn : days * 24 * 60 * 60 * 1000
       const expiresAt = Date.now() + expiresIn
-      // Guardar token en localStorage
-      localStorage.setItem('anime_saver_token', data.token)
-      localStorage.setItem('anime_saver_token_expires', String(expiresAt))
+      // Guardar solo una pista de expiración local; la sesión real vive en cookie HttpOnly.
+      localStorage.setItem(SESSION_EXPIRES_KEY, String(expiresAt))
       persistExtendedSessionPickerPreference(days, expiresAt)
       
       return {
         success: true,
-        token: data.token
+        token: 'cookie-session'
       }
     }
     
@@ -286,12 +284,13 @@ export async function verifyToken(token) {
   try {
     const response = await fetch(API_URL, {
       method: 'POST',
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         action: 'verify',
-        token
+        token: token || undefined
       })
     })
     
@@ -352,6 +351,16 @@ export async function verifyToken(token) {
 export function getStoredToken() {
   if (typeof window === 'undefined') return null
   
+  const sessionExpires = localStorage.getItem(SESSION_EXPIRES_KEY)
+  if (sessionExpires) {
+    const now = Date.now()
+    const expiresAt = parseInt(sessionExpires, 10)
+    if (!Number.isNaN(expiresAt) && now < expiresAt) {
+      return 'cookie-session'
+    }
+    localStorage.removeItem(SESSION_EXPIRES_KEY)
+  }
+
   const token = localStorage.getItem('anime_saver_token')
   const expires = localStorage.getItem('anime_saver_token_expires')
   
@@ -381,6 +390,13 @@ export function removeToken(options = {}) {
   if (typeof window === 'undefined') return
   localStorage.removeItem('anime_saver_token')
   localStorage.removeItem('anime_saver_token_expires')
+  localStorage.removeItem(SESSION_EXPIRES_KEY)
+  fetch(API_URL, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'logout' })
+  }).catch(() => {})
   if (!preserveSessionPickerPreference) {
     clearSessionPickerPreferenceKeys()
   }

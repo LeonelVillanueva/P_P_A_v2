@@ -18,7 +18,7 @@ const getSupabaseUrl = () => {
   
   // No hay URL configurada
   if (import.meta.env.DEV) {
-    console.error('❌ VITE_SUPABASE_URL no está configurada')
+    console.error('❌ Falta la URL del servicio de datos')
   }
   return ''
 }
@@ -41,16 +41,16 @@ const isValidSupabaseUrl = (url) => {
 
 // Validar configuración
 if (!supabaseUrl || !supabaseAnonKey) {
-  const errorMsg = '❌ Configuración de Supabase incompleta. Verifica las variables de entorno VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY'
+  const errorMsg = '❌ Configuración de datos incompleta. Revisa tus variables de entorno de cliente.'
   if (import.meta.env.DEV) {
     console.error(errorMsg)
-    console.warn('📝 Para obtenerlas: Ve a Supabase Dashboard → Settings → API')
+    console.warn('📝 Revisa en tu panel del proveedor de datos las credenciales públicas del proyecto.')
   }
 } else if (!isValidSupabaseUrl(supabaseUrl)) {
-  const errorMsg = `❌ URL de Supabase inválida: ${supabaseUrl}`
+  const errorMsg = '❌ URL del servicio de datos inválida.'
   if (import.meta.env.DEV) {
     console.error(errorMsg)
-    console.warn('📝 La URL debe tener el formato: https://xxxxx.supabase.co')
+    console.warn('📝 La URL debe ser HTTPS y apuntar al dominio de tu proyecto.')
   }
 }
 

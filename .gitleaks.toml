@@ -1,0 +1,6 @@
+[allowlist]
+description = "Allow local environment and build artifacts"
+paths = [
+  '''^\.env$''',
+  '''^dist/''',
+]

@@ -5,25 +5,32 @@
  * Variables en Vercel (Project Settings → Environment Variables):
  * - VITE_SUPABASE_URL o SUPABASE_URL
  * - VITE_SUPABASE_ANON_KEY o SUPABASE_ANON_KEY
- * - CRON_SECRET (opcional): si la defines, el cron debe enviar Authorization: Bearer …
- *   Si NO la tienes: no hace falta crearla; Vercel Cron envía x-vercel-cron: 1 y con eso basta.
+ * - CRON_SECRET (obligatorio): el cron debe enviar Authorization: Bearer <secret>
  */
 
 function isAuthorized(req) {
   const cronSecret = process.env.CRON_SECRET
+  if (!cronSecret) return false
   const auth = req.headers?.authorization || ''
-  if (cronSecret) {
-    return auth === `Bearer ${cronSecret}`
+  return auth === `Bearer ${cronSecret}`
+}
+
+function applyCors(req, res) {
+  const allowedOrigins = (process.env.CORS_ALLOWED_ORIGINS || '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean)
+  const origin = req.headers?.origin || ''
+  if (origin && allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin)
+    res.setHeader('Vary', 'Origin')
   }
-  // Sin CRON_SECRET: solo aceptar invocaciones oficiales de Cron de Vercel
-  return req.headers['x-vercel-cron'] === '1'
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
 }
 
 export default async function handler(req, res) {
-  // CORS: permitir invocación cross-origin controlada (útil para pruebas/monitoreo web)
-  res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+  applyCors(req, res)
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end()
@@ -44,7 +51,7 @@ export default async function handler(req, res) {
   if (!supabaseUrl || !supabaseKey) {
     return res.status(500).json({
       ok: false,
-      error: 'Faltan SUPABASE_URL / ANON_KEY en el servidor'
+      error: 'Falta configuracion de conexion de lectura en el servidor'
     })
   }
 
@@ -55,7 +62,6 @@ export default async function handler(req, res) {
       method: 'GET',
       headers: {
         apikey: supabaseKey,
-        Authorization: `Bearer ${supabaseKey}`,
         Accept: 'application/json'
       }
     })
